@@ -398,7 +398,7 @@
       width: 100%;
       display: flex;
       justify-content: center;
-      overflow: hidden;
+      overflow-x: hidden;
     }
     .canvas-frame .card,
     .canvas-frame .card-list {
@@ -1152,7 +1152,7 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
 })();
 
 
-// ============ MOBILE FIT (transform: scale based on viewport width) ============
+// ============ MOBILE FIT (transform: scale + negative margin, no clipping) ============
 function fitCardsToMobile() {
   const isMobile = window.innerWidth <= 700;
   const frames = document.querySelectorAll('.canvas-frame');
@@ -1162,23 +1162,26 @@ function fitCardsToMobile() {
     if (!isMobile) {
       card.style.transform = '';
       card.style.transformOrigin = '';
+      card.style.marginBottom = '';
       frame.style.height = '';
       return;
     }
-    // Only fit currently visible frames (computed style, not just inline)
+    // Skip non-visible frames (they'll be processed when shown)
     const computedDisplay = window.getComputedStyle(frame).display;
     if (computedDisplay === 'none') return;
-    // Reset transform and force reflow to measure natural height
+    // Reset to measure natural height accurately
     card.style.transform = '';
+    card.style.marginBottom = '';
     void card.offsetHeight;
     const naturalH = card.offsetHeight;
-    if (naturalH < 100) return; // sanity guard
+    if (naturalH < 100) return;
     const padding = 24;
     const scale = Math.min(1, (window.innerWidth - padding) / 540);
     card.style.transform = `scale(${scale})`;
     card.style.transformOrigin = 'top center';
-    // Add small bottom buffer to avoid clipping any subpixel rounding
-    frame.style.height = Math.ceil(naturalH * scale + 20) + 'px';
+    // Pull subsequent content up by the unused vertical space (no clipping)
+    card.style.marginBottom = `-${Math.round(naturalH * (1 - scale))}px`;
+    frame.style.height = '';
   });
 }
 
