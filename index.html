@@ -390,13 +390,25 @@
     /* App grid: already stacked at 1000px */
     .app { gap: 20px; }
 
-    /* Preview cards: scale down proportionally to fit narrow screen */
-    .preview-wrap { width: 100%; overflow: visible; }
-    .canvas-frame { width: 100%; display: flex; justify-content: center; }
+    /* Preview cards: keep native 540px, allow horizontal scroll on narrow screens */
+    .preview-wrap { width: 100%; }
+    .canvas-frame {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      justify-content: flex-start;
+      padding-bottom: 8px;
+    }
     .canvas-frame .card,
     .canvas-frame .card-list {
-      zoom: 0.6;
-      -ms-zoom: 0.6;
+      flex-shrink: 0;
+    }
+    .preview-label { padding: 0 4px; }
+    .preview-label::after {
+      content: ' · 좌우 스와이프';
+      opacity: 0.6;
+      font-size: 10px;
     }
 
     /* Input fields */
@@ -413,10 +425,6 @@
 
   /* Very narrow (e.g. iPhone SE) */
   @media (max-width: 380px) {
-    .canvas-frame .card,
-    .canvas-frame .card-list {
-      zoom: 0.52;
-    }
     .tpl-picker button { font-size: 10px; padding: 5px 7px; }
     body { padding: 10px; }
     .panel { padding: 14px; }
