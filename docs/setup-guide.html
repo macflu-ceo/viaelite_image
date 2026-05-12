@@ -90,25 +90,27 @@
 <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th>
 </tr></thead>
 <tbody><tr>
-<td>ID</td><td>비밀번호</td><td>이름</td><td>활성</td><td>레벨</td><td>소속</td><td>가입일</td><td>마지막 로그인</td><td>로그인 횟수</td>
+<td>ID</td><td>비밀번호</td><td>이름</td><td>활성</td><td>가입일</td><td>마지막 로그인</td><td>로그인 횟수</td><td>이미지 제작 횟수</td><td>마지막 로그인 기기</td>
 </tr></tbody>
 </table>
+
+<p>A~E열은 본사가 수동으로 입력, F~I열은 시스템이 자동으로 기록합니다.</p>
 
 <p>5. 2행부터 실제 컨시어지 정보를 입력합니다. 예시:</p>
 
 <table class="table-sample">
 <thead><tr>
-<th>ID</th><th>비밀번호</th><th>이름</th><th>활성</th><th>레벨</th><th>소속</th><th>가입일</th><th>마지막 로그인</th><th>로그인 횟수</th>
+<th>ID</th><th>비밀번호</th><th>이름</th><th>활성</th><th>가입일</th><th>마지막 로그인</th><th>로그인 횟수</th><th>이미지 제작 횟수</th><th>마지막 로그인 기기</th>
 </tr></thead>
 <tbody>
-<tr><td>kim001</td><td>vip2026</td><td>김민지</td><td>TRUE</td><td>시니어</td><td>강남지점</td><td>2026-01-15</td><td></td><td>0</td></tr>
-<tr><td>park002</td><td>luxury88</td><td>박지훈</td><td>TRUE</td><td>일반</td><td>온라인팀</td><td>2026-02-10</td><td></td><td>0</td></tr>
-<tr><td>lee003</td><td>elite2026</td><td>이수민</td><td>TRUE</td><td>매니저</td><td>청담편집샵</td><td>2026-03-05</td><td></td><td>0</td></tr>
+<tr><td>kim001</td><td>vip2026</td><td>김민지</td><td>TRUE</td><td>2026-01-15</td><td>(자동)</td><td>(자동)</td><td>(자동)</td><td>(자동)</td></tr>
+<tr><td>park002</td><td>luxury88</td><td>박지훈</td><td>TRUE</td><td>2026-02-10</td><td>(자동)</td><td>(자동)</td><td>(자동)</td><td>(자동)</td></tr>
+<tr><td>lee003</td><td>elite2026</td><td>이수민</td><td>TRUE</td><td>2026-03-05</td><td>(자동)</td><td>(자동)</td><td>(자동)</td><td>(자동)</td></tr>
 </tbody>
 </table>
 
 <div class="tip">
-<strong>팁:</strong> "활성" 컬럼은 <code>TRUE</code>(활성) 또는 <code>FALSE</code>(비활성)로. 비활성으로 두면 로그인 차단됩니다. "마지막 로그인"과 "로그인 횟수"는 비워두세요 — 시스템이 자동으로 채웁니다.
+<strong>팁:</strong> "활성" 컬럼은 <code>TRUE</code>(활성) 또는 <code>FALSE</code>(비활성)로. 비활성으로 두면 로그인 차단됩니다. F~I열(자동 기록 컬럼)은 비워두세요 — 로그인·이미지 저장 시 시스템이 자동으로 채웁니다. "마지막 로그인 기기"는 <code>mo</code>(모바일) 또는 <code>pc</code>(PC)로 기록됩니다.
 </div>
 
 <div class="warning">

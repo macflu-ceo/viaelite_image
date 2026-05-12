@@ -891,6 +891,7 @@ document.getElementById('downloadS').addEventListener('click', () => {
   if (activeTpl) {
     const tplNum = activeTpl.getAttribute('data-tpl');
     downloadCard(activeTpl.querySelector('.card'), `t${tplNum}`);
+    recordCardCreated();
   }
 });
 
@@ -985,7 +986,10 @@ document.getElementById('addProduct').addEventListener('click', () => {
 });
 document.getElementById('listTitle').addEventListener('input', renderList);
 document.getElementById('resetA').addEventListener('click', () => { productsState.length = 0; renderProductForms(); renderList(); });
-document.getElementById('downloadA').addEventListener('click', () => { downloadCard(document.getElementById('cardList'), 'list'); });
+document.getElementById('downloadA').addEventListener('click', () => {
+  downloadCard(document.getElementById('cardList'), 'list');
+  recordCardCreated();
+});
 
 // Top-level mode toggle
 const panelSingle = document.getElementById('panel-single');
@@ -1047,10 +1051,7 @@ function showApp(user) {
   const chip = document.getElementById('userChip');
   const meta = document.getElementById('userMeta');
   chip.firstChild.nodeValue = user.name || user.id || '사용자';
-  const metaParts = [];
-  if (user.level) metaParts.push(user.level);
-  if (user['소속']) metaParts.push(user['소속']);
-  meta.textContent = metaParts.length ? '· ' + metaParts.join(' · ') : '';
+  meta.textContent = user.joinDate ? '· 가입 ' + user.joinDate : '';
 }
 
 function showLogin() {
@@ -1066,16 +1067,34 @@ function showLogin() {
   }
 }
 
+function detectDevice() {
+  return /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ? 'mo' : 'pc';
+}
+
 async function doLogin(id, password) {
+  const device = detectDevice();
   if (isDemoMode) {
-    return { success: true, name: id + ' (데모)', level: 'DEMO', '소속': '데모 모드', demo: true };
+    return { success: true, id: id, name: id + ' (데모)', joinDate: '2026-01-01', demo: true };
   }
   const res = await fetch(APPS_SCRIPT_URL, {
     method: 'POST',
-    body: JSON.stringify({ action: 'login', id, password }),
-    // Note: no Content-Type header so it sends as text/plain (avoids CORS preflight)
+    body: JSON.stringify({ action: 'login', id, password, device }),
   });
   return await res.json();
+}
+
+async function recordCardCreated() {
+  try {
+    const raw = sessionStorage.getItem('viaelite_session');
+    if (!raw) return;
+    const user = JSON.parse(raw);
+    if (!user || !user.id || user.demo || isDemoMode) return;
+    // Fire-and-forget — no need to wait for response
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'card_created', id: user.id }),
+    }).catch(() => {});
+  } catch (e) {}
 }
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
