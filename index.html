@@ -363,6 +363,13 @@
     color: #666;
   }
   .user-bar button:hover { border-color: #c0392b; color: #c0392b; }
+  .user-bar a.guide-link {
+    background: transparent; border: 1px solid #1c3829; padding: 6px 12px;
+    border-radius: 999px; font-family: inherit; font-size: 12px;
+    color: #1c3829; font-weight: 600; text-decoration: none;
+    display: inline-flex; align-items: center;
+  }
+  .user-bar a.guide-link:hover { background: #1c3829; color: #fff; }
 
 
   /* ============ MOBILE RESPONSIVE ============ */
@@ -443,7 +450,10 @@
     </form>
     <div id="loginError" class="login-error"></div>
     <div id="loginModeBadge" class="login-mode-badge"></div>
-    <div class="login-footer">VIA ELITE · J PRIMO INTERNATIONAL</div>
+    <div class="login-footer">
+      <a href="https://faithful-argument-9d1.notion.site/35ec40838e67814096deeb52c6e73928?source=copy_link" target="_blank" rel="noopener" style="color:#1c3829; text-decoration:underline; font-size:11px;">📖 이용 가이드 보기</a>
+      <div style="margin-top:8px;">VIA ELITE · J PRIMO INTERNATIONAL</div>
+    </div>
   </div>
 </div>
 
@@ -463,6 +473,7 @@
         </div>
         <div class="user-bar">
           <span class="user-chip" id="userChip">사용자<span class="meta" id="userMeta"></span></span>
+          <a href="https://faithful-argument-9d1.notion.site/35ec40838e67814096deeb52c6e73928?source=copy_link" target="_blank" rel="noopener" class="guide-link">📖 가이드보기</a>
           <button id="logoutBtn">로그아웃</button>
         </div>
       </div>
