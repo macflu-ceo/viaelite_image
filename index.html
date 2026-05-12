@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>비아엘리떼 상품카드 생성기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Noto+Sans+KR:wght@400;500;700;900&family=Inter:wght@400;600;700;800;900&family=Playfair+Display:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', -apple-system, sans-serif; background: #f4f3ef; color: #1a1a1a; min-height: 100vh; padding: 24px; }
+  .app { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 420px 1fr; gap: 32px; }
+  @media (max-width: 1000px) { .app { grid-template-columns: 1fr; } }
+  header.brand { grid-column: 1 / -1; padding-bottom: 16px; border-bottom: 1px solid #d8d3c7; margin-bottom: 8px; }
+  .brand-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .brand-title { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 600; letter-spacing: 0.06em; color: #1c3829; }
+  .brand-subtitle { font-size: 11px; color: #6b6b6b; margin-top: 2px; letter-spacing: 0.12em; }
+  .top-toggle { display: flex; background: #fff; border: 1px solid #d8d3c7; border-radius: 999px; overflow: hidden; }
+  .top-toggle button { padding: 9px 22px; border: 0; background: transparent; cursor: pointer; font-size: 13px; color: #555; font-family: inherit; font-weight: 600; }
+  .top-toggle button.active { background: #1c3829; color: #fff; }
+
+  .tpl-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tpl-picker button {
+    padding: 6px 12px; border: 1px solid #d8d3c7; background: #fff;
+    border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 12px;
+    color: #1c3829; font-weight: 600; transition: all 0.15s;
+  }
+  .tpl-picker button:hover { border-color: #1c3829; }
+  .tpl-picker button.active { background: #1c3829; color: #fff; border-color: #1c3829; }
+  .tpl-picker .num { font-family: 'Inter', sans-serif; font-weight: 800; margin-right: 4px; opacity: 0.7; }
+  .tpl-picker button.active .num { opacity: 1; }
+
+  .panel { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); height: fit-content; }
+  .panel h2 { font-size: 14px; font-weight: 700; color: #1c3829; letter-spacing: 0.08em; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #ecebe6; text-transform: uppercase; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: #666; margin-bottom: 6px; font-weight: 500; }
+  .field input[type=text], .field input[type=number] {
+    width: 100%; padding: 10px 12px; border: 1px solid #d8d3c7; border-radius: 6px;
+    font-family: inherit; font-size: 14px; background: #faf9f5;
+  }
+  .field input:focus { outline: none; border-color: #1c3829; background: #fff; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .file-input { border: 2px dashed #d8d3c7; border-radius: 8px; padding: 14px; text-align: center; background: #faf9f5; cursor: pointer; font-size: 13px; color: #888; }
+  .file-input.has-image { border-style: solid; border-color: #1c3829; color: #1c3829; }
+  .file-input input { display: none; }
+  .computed { background: #f6f2e9; border-radius: 8px; padding: 12px 14px; margin-top: 4px; font-size: 13px; display: flex; justify-content: space-between; color: #5a5a5a; }
+  .computed strong.disc { color: #1c3829; font-weight: 700; }
+  .computed strong.profit { color: #1c3829; font-weight: 700; }
+  .computed strong.loss { color: #c0392b; font-weight: 700; }
+  .actions { margin-top: 18px; display: flex; gap: 8px; }
+  .btn { flex: 1; padding: 12px; border: 0; border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: #1c3829; color: #fff; }
+  .btn-primary:hover { background: #244c39; }
+  .btn-ghost { background: #f0ede4; color: #1c3829; }
+  .hint { font-size: 11px; color: #999; margin-top: 6px; line-height: 1.5; }
+
+  .preview-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .preview-label { font-size: 12px; color: #888; letter-spacing: 0.12em; text-transform: uppercase; }
+  .canvas-frame { display: flex; justify-content: center; }
+
+  /* ============ SHARED CARD BASE ============ */
+  .card {
+    width: 540px;
+    background: #faf9f5;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Noto Sans KR', sans-serif;
+    color: #1c1c1c;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.12);
+  }
+  .card .top-band {
+    background: #1c3829; padding: 18px 0;
+    display: flex; justify-content: center; align-items: center;
+  }
+  .card .top-band img { height: 28px; width: auto; display: block; }
+  .card .savings-band {
+    background: #1c3829; color: #fff; padding: 14px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card .savings-band .label { font-size: 11px; letter-spacing: 0.2em; opacity: 0.85; text-transform: uppercase; }
+  .card .savings-band .value { font-size: 22px; font-weight: 800; }
+  .card .savings-band .value .won { font-size: 14px; font-weight: 700; margin-left: 2px; }
+  .card .placeholder { color: #c0bdb3; font-size: 13px; text-align: center; padding: 16px; }
+
+  /* ============ T1: 클래식 가격형 ============ */
+  .card.t1 .product-area { position: relative; height: 480px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .card.t1 .product-area img.prod { max-width: 92%; max-height: 92%; object-fit: contain; }
+  .card.t1 .discount-badge {
+    position: absolute; top: 0; left: 0; background: #1c3829; color: #fff;
+    padding: 22px 40px 22px 30px; border-bottom-right-radius: 999px;
+    display: flex; align-items: baseline; gap: 6px; font-weight: 800; z-index: 2;
+  }
+  .card.t1 .discount-badge .num { font-size: 64px; line-height: 1; font-family: 'Inter', sans-serif; font-weight: 900; letter-spacing: -0.02em; }
+  .card.t1 .discount-badge .pct { font-size: 30px; line-height: 1; font-weight: 800; }
+  .card.t1 .info-area { padding: 24px 32px 20px; background: #faf9f5; }
+  .card.t1 .brand-line { display: flex; align-items: baseline; gap: 12px; margin-bottom: 2px; }
+  .card.t1 .brand-en { font-family: 'Cormorant Garamond', serif; font-size: 44px; font-weight: 700; color: #1c1c1c; letter-spacing: 0.02em; line-height: 1.1; }
+  .card.t1 .brand-kr { font-size: 16px; color: #777; font-weight: 500; }
+  .card.t1 .product-name { font-size: 18px; color: #333; margin-bottom: 16px; font-weight: 500; line-height: 1.3; }
+  .card.t1 .price-original-row { display: flex; align-items: baseline; gap: 10px; }
+  .card.t1 .price-label-small { font-size: 13px; color: #999; }
+  .card.t1 .price-original { font-size: 17px; color: #999; text-decoration: line-through; text-decoration-color: #c0392b; font-weight: 500; }
+  .card.t1 .price-sale-row { margin-top: 6px; }
+  .card.t1 .price-sale-label { font-size: 16px; color: #1c3829; font-weight: 700; margin-bottom: 4px; display: block; }
+  .card.t1 .price-sale { font-size: 58px; color: #1c1c1c; font-weight: 900; letter-spacing: -0.025em; line-height: 1; }
+  .card.t1 .price-sale .won { font-size: 30px; font-weight: 800; margin-left: 4px; }
+
+  /* ============ T2: 할인율 영웅형 ============ */
+  .card.t2 .percent-hero { padding: 40px 0 28px; text-align: center; background: #faf9f5; }
+  .card.t2 .pct-big { font-family: 'Inter', sans-serif; font-size: 200px; font-weight: 900; line-height: 0.85; color: #1c3829; letter-spacing: -0.06em; display: inline-flex; align-items: baseline; }
+  .card.t2 .pct-big .sym { font-size: 110px; margin-left: 4px; color: #c0392b; }
+  .card.t2 .pct-sub { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: 0.4em; color: #c0392b; margin-top: 8px; text-transform: uppercase; }
+  .card.t2 .product-area-small { height: 300px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; border-top: 1px solid #ecebe6; border-bottom: 1px solid #ecebe6; }
+  .card.t2 .product-area-small img.prod { max-width: 70%; max-height: 85%; object-fit: contain; }
+  .card.t2 .info-compact { padding: 22px 32px 18px; background: #faf9f5; text-align: center; }
+  .card.t2 .brand-line { display: flex; justify-content: center; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .card.t2 .brand-en { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; }
+  .card.t2 .brand-kr { font-size: 14px; color: #777; }
+  .card.t2 .product-name { font-size: 14px; color: #666; margin-bottom: 12px; }
+  .card.t2 .price-row { display: flex; justify-content: center; align-items: baseline; gap: 14px; }
+  .card.t2 .price-original { font-size: 16px; color: #999; text-decoration: line-through; text-decoration-color: #c0392b; }
+  .card.t2 .price-sale { font-size: 32px; color: #1c1c1c; font-weight: 900; letter-spacing: -0.02em; }
+  .card.t2 .price-sale .won { font-size: 18px; margin-left: 2px; }
+
+  /* ============ T3: 특가 카피형 ============ */
+  .card.t3 .product-area { position: relative; height: 420px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .card.t3 .product-area img.prod { max-width: 88%; max-height: 88%; object-fit: contain; }
+  .card.t3 .special-tag {
+    position: absolute; top: 18px; right: -8px;
+    background: #c0392b; color: #fff; padding: 12px 22px;
+    font-family: 'Inter', sans-serif; font-weight: 900; font-size: 22px;
+    transform: rotate(8deg);
+    box-shadow: 0 4px 12px rgba(192,57,43,0.35);
+    z-index: 2;
+  }
+  .card.t3 .special-tag .pct-text { font-size: 30px; line-height: 1; display: block; }
+  .card.t3 .special-tag .word { font-size: 14px; letter-spacing: 0.15em; margin-top: 2px; display: block; }
+  .card.t3 .info-area { padding: 24px 32px 20px; background: #faf9f5; text-align: left; }
+  .card.t3 .copy-line { font-size: 14px; color: #c0392b; font-weight: 800; letter-spacing: 0.1em; margin-bottom: 8px; text-transform: uppercase; }
+  .card.t3 .brand-line { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .card.t3 .brand-en { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; }
+  .card.t3 .brand-kr { font-size: 14px; color: #777; }
+  .card.t3 .product-name { font-size: 15px; color: #555; margin-bottom: 14px; }
+  .card.t3 .price-row { display: flex; align-items: baseline; justify-content: space-between; }
+  .card.t3 .price-original { font-size: 16px; color: #999; text-decoration: line-through; text-decoration-color: #c0392b; }
+  .card.t3 .price-sale { font-size: 40px; color: #1c1c1c; font-weight: 900; letter-spacing: -0.02em; }
+  .card.t3 .price-sale .won { font-size: 22px; margin-left: 2px; }
+
+  /* ============ T4: 시즌 한정형 ============ */
+  .card.t4 .urgent-band { background: #c0392b; color: #fff; padding: 12px 24px; text-align: center; font-family: 'Inter', sans-serif; font-weight: 900; letter-spacing: 0.3em; font-size: 14px; }
+  .card.t4 .urgent-band .dot { color: #fff; opacity: 0.6; margin: 0 8px; }
+  .card.t4 .product-area { position: relative; height: 440px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .card.t4 .product-area img.prod { max-width: 90%; max-height: 90%; object-fit: contain; }
+  .card.t4 .discount-corner {
+    position: absolute; top: 14px; left: 14px;
+    background: rgba(28,56,41,0.92); color: #fff; padding: 12px 18px;
+    font-family: 'Inter', sans-serif; font-weight: 900;
+    border-radius: 8px;
+  }
+  .card.t4 .discount-corner .num { font-size: 36px; line-height: 1; }
+  .card.t4 .discount-corner .pct { font-size: 18px; }
+  .card.t4 .info-area { padding: 22px 32px 18px; background: #faf9f5; }
+  .card.t4 .brand-line { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+  .card.t4 .brand-en { font-family: 'Cormorant Garamond', serif; font-size: 34px; font-weight: 700; }
+  .card.t4 .brand-kr { font-size: 14px; color: #777; }
+  .card.t4 .product-name { font-size: 15px; color: #555; margin-bottom: 12px; }
+  .card.t4 .price-row { display: flex; align-items: baseline; gap: 12px; }
+  .card.t4 .price-original { font-size: 16px; color: #999; text-decoration: line-through; text-decoration-color: #c0392b; }
+  .card.t4 .price-sale { font-size: 38px; color: #c0392b; font-weight: 900; letter-spacing: -0.02em; }
+  .card.t4 .price-sale .won { font-size: 20px; }
+  .card.t4 .footer-note { background: #1c3829; color: #fff; padding: 10px 24px; text-align: center; font-size: 11px; letter-spacing: 0.2em; opacity: 0.95; text-transform: uppercase; }
+
+  /* ============ T5: 럭셔리 다크 ============ */
+  .card.t5 { background: #0c0c0c; color: #e8e2d1; }
+  .card.t5 .top-band { background: #0c0c0c; padding: 22px 0; border-bottom: 1px solid #2a2a2a; }
+  .card.t5 .top-band img { filter: brightness(0) invert(0.85) sepia(0.4) hue-rotate(15deg) saturate(0.7); height: 24px; }
+  .card.t5 .product-area { height: 440px; background: #161616; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+  .card.t5 .product-area::before, .card.t5 .product-area::after {
+    content: ''; position: absolute; width: 80px; height: 1px; background: #c9a96e;
+  }
+  .card.t5 .product-area::before { top: 24px; left: 24px; }
+  .card.t5 .product-area::after { bottom: 24px; right: 24px; }
+  .card.t5 .product-area img.prod { max-width: 80%; max-height: 80%; object-fit: contain; }
+  .card.t5 .info-area { padding: 28px 32px 24px; background: #0c0c0c; text-align: center; }
+  .card.t5 .exclusive-tag { font-family: 'Inter', sans-serif; font-size: 11px; letter-spacing: 0.4em; color: #c9a96e; margin-bottom: 14px; text-transform: uppercase; }
+  .card.t5 .brand-en { font-family: 'Playfair Display', serif; font-size: 48px; font-weight: 700; color: #e8e2d1; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .card.t5 .brand-kr { font-size: 13px; color: #8a8174; letter-spacing: 0.15em; margin-bottom: 4px; }
+  .card.t5 .product-name { font-size: 14px; color: #b5ad99; margin-bottom: 18px; letter-spacing: 0.05em; }
+  .card.t5 .divider-gold { width: 60px; height: 1px; background: #c9a96e; margin: 0 auto 16px; }
+  .card.t5 .price-original { font-size: 14px; color: #6e655a; text-decoration: line-through; margin-bottom: 6px; }
+  .card.t5 .price-sale { font-family: 'Playfair Display', serif; font-size: 36px; color: #c9a96e; font-weight: 700; letter-spacing: -0.01em; }
+  .card.t5 .price-sale .won { font-size: 18px; margin-left: 2px; }
+  .card.t5 .savings-band { background: #1a1a1a; color: #c9a96e; border-top: 1px solid #2a2a2a; }
+  .card.t5 .savings-band .label { color: #8a8174; }
+
+  /* ============ T6: 풀이미지 오버레이 ============ */
+  .card.t6 { width: 540px; height: 720px; }
+  .card.t6 .full-image {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: #f5f3ed; display: flex; align-items: center; justify-content: center; overflow: hidden;
+  }
+  .card.t6 .full-image img { width: 100%; height: 100%; object-fit: cover; }
+  .card.t6 .full-image .placeholder-full { color: #b5b0a3; font-size: 13px; }
+  .card.t6 .corner-logo {
+    position: absolute; top: 18px; right: 18px;
+    background: rgba(28,56,41,0.9); padding: 8px 14px; border-radius: 4px; z-index: 2;
+  }
+  .card.t6 .corner-logo img { height: 16px; width: auto; display: block; }
+  .card.t6 .discount-badge {
+    position: absolute; top: 18px; left: 18px;
+    background: #c0392b; color: #fff; padding: 14px 22px; z-index: 2;
+    border-radius: 4px;
+    display: flex; align-items: baseline; gap: 4px; font-family: 'Inter', sans-serif; font-weight: 900;
+  }
+  .card.t6 .discount-badge .num { font-size: 42px; line-height: 1; }
+  .card.t6 .discount-badge .pct { font-size: 20px; }
+  .card.t6 .overlay-bottom {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 2;
+    padding: 60px 28px 24px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.85) 60%, rgba(0,0,0,0.95) 100%);
+    color: #fff;
+  }
+  .card.t6 .brand-line { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .card.t6 .brand-en { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; color: #fff; }
+  .card.t6 .brand-kr { font-size: 13px; color: #ccc; }
+  .card.t6 .product-name { font-size: 14px; color: #ddd; margin-bottom: 12px; }
+  .card.t6 .price-row { display: flex; align-items: baseline; justify-content: space-between; }
+  .card.t6 .price-original { font-size: 14px; color: #aaa; text-decoration: line-through; }
+  .card.t6 .price-sale { font-size: 36px; color: #fff; font-weight: 900; letter-spacing: -0.02em; }
+  .card.t6 .price-sale .won { font-size: 20px; }
+
+  /* ============ T7: 백화점 비교형 ============ */
+  .card.t7 .product-area { height: 360px; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+  .card.t7 .product-area img.prod { max-width: 80%; max-height: 90%; object-fit: contain; }
+  .card.t7 .brand-block { padding: 20px 32px 4px; background: #faf9f5; }
+  .card.t7 .brand-line { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .card.t7 .brand-en { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 700; }
+  .card.t7 .brand-kr { font-size: 14px; color: #777; }
+  .card.t7 .product-name { font-size: 14px; color: #666; margin-bottom: 10px; }
+  .card.t7 .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 12px 0; background: #faf9f5; }
+  .card.t7 .compare-col { padding: 14px 24px; text-align: center; }
+  .card.t7 .compare-col.left { border-right: 1px solid #d8d3c7; }
+  .card.t7 .compare-col .col-label { font-size: 11px; color: #888; letter-spacing: 0.15em; margin-bottom: 6px; text-transform: uppercase; }
+  .card.t7 .compare-col.left .col-price { font-size: 22px; color: #999; text-decoration: line-through; font-weight: 600; }
+  .card.t7 .compare-col.right .col-label { color: #1c3829; font-weight: 700; }
+  .card.t7 .compare-col.right .col-price { font-size: 30px; color: #1c3829; font-weight: 900; letter-spacing: -0.02em; }
+  .card.t7 .compare-col.right .col-price .won { font-size: 18px; }
+  .card.t7 .compare-note { background: #1c3829; color: #fff; padding: 12px 24px; text-align: center; font-size: 13px; font-weight: 700; letter-spacing: 0.05em; }
+  .card.t7 .compare-note strong { color: #f5d491; font-size: 16px; margin: 0 4px; }
+
+  /* ============ T8: 미니멀 시그니처 ============ */
+  .card.t8 { background: #faf9f5; }
+  .card.t8 .top-band { background: transparent; padding: 28px 0 8px; }
+  .card.t8 .top-band img { filter: brightness(0) saturate(100%) invert(15%) sepia(34%) saturate(1264%) hue-rotate(108deg) brightness(95%) contrast(89%); height: 18px; }
+  .card.t8 .product-area { height: 380px; background: #faf9f5; display: flex; align-items: center; justify-content: center; overflow: hidden; padding: 0 40px; }
+  .card.t8 .product-area img.prod { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .card.t8 .info-minimal { padding: 8px 40px 28px; text-align: center; }
+  .card.t8 .hairline { width: 100%; height: 1px; background: #c9b88f; margin: 12px 0 18px; }
+  .card.t8 .brand-en { font-family: 'Cormorant Garamond', serif; font-size: 36px; font-weight: 600; letter-spacing: 0.12em; margin-bottom: 2px; }
+  .card.t8 .brand-kr { font-size: 12px; color: #888; letter-spacing: 0.2em; margin-bottom: 8px; text-transform: uppercase; }
+  .card.t8 .product-name { font-size: 13px; color: #666; margin-bottom: 16px; font-style: italic; }
+  .card.t8 .price-inline { display: flex; align-items: baseline; justify-content: center; gap: 20px; font-size: 14px; color: #5a5a5a; }
+  .card.t8 .price-inline .sep { color: #c9b88f; }
+  .card.t8 .price-inline .sale-val { font-weight: 800; color: #1c3829; font-size: 18px; }
+  .card.t8 .pct-small { font-family: 'Inter', sans-serif; font-size: 13px; color: #c0392b; font-weight: 800; margin-top: 8px; letter-spacing: 0.1em; }
+  .card.t8 .savings-band { display: none; }
+
+  /* ============ STYLE A: List ============ */
+  .card-list { width: 540px; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,0.12); font-family: 'Noto Sans KR', sans-serif; overflow: hidden; }
+  .card-list .list-top { background: #1c3829; padding: 16px 0; display: flex; justify-content: center; }
+  .card-list .list-top img { height: 24px; }
+  .card-list .list-title-wrap { padding: 22px 28px 18px; text-align: center; border-bottom: 1px solid #eee; }
+  .card-list .list-title-wrap .lh-title { font-size: 15px; color: #1c3829; font-weight: 700; letter-spacing: 0.06em; }
+  .card-list .list-body { padding: 0 28px 28px; }
+  .list-row { display: grid; grid-template-columns: 130px 1fr; gap: 18px; padding: 22px 0; border-bottom: 1px solid #eee; align-items: center; }
+  .list-row:last-child { border-bottom: 0; }
+  .list-row .img-box { width: 130px; height: 130px; background: #faf9f5; border-radius: 14px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .list-row .img-box img { max-width: 90%; max-height: 90%; object-fit: contain; }
+  .list-row .img-box .ph { color: #c8c5bb; font-size: 11px; }
+  .list-row .info .brand-line { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .list-row .info .b-en { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 700; color: #1c1c1c; }
+  .list-row .info .b-kr { font-size: 12px; color: #888; font-weight: 500; }
+  .list-row .info .b-disc { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 900; color: #c0392b; margin-left: auto; padding: 2px 10px; background: #fdecea; border-radius: 6px; }
+  .list-row .prices { display: grid; grid-template-columns: 70px 1fr; row-gap: 4px; }
+  .list-row .prices .pl { font-size: 12px; color: #999; }
+  .list-row .prices .pv { font-size: 14px; color: #1c1c1c; font-weight: 500; text-align: right; }
+  .list-row .prices .pv.original { text-decoration: line-through; color: #aaa; font-weight: 400; }
+  .list-row .prices .pv.bold { font-weight: 800; font-size: 18px; color: #1c3829; }
+
+  .product-form { border: 1px solid #ecebe6; border-radius: 10px; padding: 14px; margin-bottom: 10px; background: #faf9f5; }
+  .product-form .pf-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .product-form .pf-head .pf-title { font-size: 13px; font-weight: 700; color: #1c3829; }
+  .product-form .pf-head .pf-remove { background: transparent; border: 0; color: #c0392b; cursor: pointer; font-size: 12px; }
+  .add-product-btn { width: 100%; padding: 10px; border: 1px dashed #1c3829; border-radius: 8px; background: transparent; color: #1c3829; font-family: inherit; cursor: pointer; margin-bottom: 14px; font-size: 13px; }
+
+  /* ============ LOGIN OVERLAY ============ */
+  .login-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, #1c3829 0%, #0a1e15 100%);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; padding: 24px;
+  }
+  .login-card {
+    background: #faf9f5; border-radius: 14px; padding: 44px 38px;
+    max-width: 420px; width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    text-align: center;
+  }
+  .login-card .login-logo {
+    height: 32px; margin: 0 auto 6px; display: block;
+    filter: brightness(0) saturate(100%) invert(15%) sepia(34%) saturate(1264%) hue-rotate(108deg) brightness(95%) contrast(89%);
+  }
+  .login-card .login-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px; font-weight: 700; color: #1c3829; letter-spacing: 0.06em;
+    margin-top: 14px;
+  }
+  .login-card .login-sub {
+    font-size: 12px; color: #777; margin-top: 4px; letter-spacing: 0.05em;
+    margin-bottom: 26px;
+  }
+  .login-card form { display: flex; flex-direction: column; gap: 10px; }
+  .login-card input {
+    padding: 13px 14px; border: 1px solid #d8d3c7; border-radius: 8px;
+    font-family: inherit; font-size: 14px; background: #fff;
+  }
+  .login-card input:focus { outline: none; border-color: #1c3829; }
+  .login-card button[type=submit] {
+    background: #1c3829; color: #fff; border: 0; padding: 13px;
+    border-radius: 8px; font-family: inherit; font-size: 14px; font-weight: 700;
+    cursor: pointer; margin-top: 6px; letter-spacing: 0.08em;
+  }
+  .login-card button[type=submit]:hover { background: #244c39; }
+  .login-card button[type=submit]:disabled { opacity: 0.6; cursor: wait; }
+  .login-error {
+    color: #c0392b; font-size: 13px; margin-top: 12px; min-height: 18px;
+    font-weight: 500;
+  }
+  .login-mode-badge {
+    margin-top: 18px; padding: 8px 12px; background: #fdecea; border-radius: 6px;
+    font-size: 11px; color: #c0392b; line-height: 1.4;
+  }
+  .login-mode-badge.ok { background: #e8f4ee; color: #1c3829; }
+  .login-footer {
+    margin-top: 22px; font-size: 11px; color: #999; letter-spacing: 0.1em;
+  }
+
+  /* ============ USER INFO BAR ============ */
+  .user-bar {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 12px; color: #555;
+  }
+  .user-bar .user-chip {
+    background: #1c3829; color: #fff; padding: 6px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 600;
+  }
+  .user-bar .user-chip .meta { opacity: 0.7; margin-left: 6px; font-weight: 400; }
+  .user-bar button {
+    background: transparent; border: 1px solid #d8d3c7; padding: 6px 12px;
+    border-radius: 999px; cursor: pointer; font-family: inherit; font-size: 12px;
+    color: #666;
+  }
+  .user-bar button:hover { border-color: #c0392b; color: #c0392b; }
+
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-card">
+    <img class="js-logo login-logo" alt="VIA ELITE">
+    <div class="login-title">컨시어지 로그인</div>
+    <div class="login-sub">상품카드 생성기 · 인증된 컨시어지만 접속 가능</div>
+    <form id="loginForm">
+      <input type="text" id="loginId" placeholder="ID" autocomplete="username" required>
+      <input type="password" id="loginPw" placeholder="비밀번호" autocomplete="current-password" required>
+      <button type="submit" id="loginBtn">로그인</button>
+    </form>
+    <div id="loginError" class="login-error"></div>
+    <div id="loginModeBadge" class="login-mode-badge"></div>
+    <div class="login-footer">VIA ELITE · J PRIMO INTERNATIONAL</div>
+  </div>
+</div>
+
+
+<div class="app" id="appRoot" style="display:none;">
+
+  <header class="brand">
+    <div class="brand-top">
+      <div>
+        <div class="brand-title">VIA ELITE — 상품카드 생성기</div>
+        <div class="brand-subtitle">8 TEMPLATES · CONSUMER-FACING</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div class="top-toggle">
+          <button id="top-single" class="active" type="button">단일형</button>
+          <button id="top-list" type="button">리스트형</button>
+        </div>
+        <div class="user-bar">
+          <span class="user-chip" id="userChip">사용자<span class="meta" id="userMeta"></span></span>
+          <button id="logoutBtn">로그아웃</button>
+        </div>
+      </div>
+    </div>
+    <div id="tplPicker" class="tpl-picker">
+      <button data-tpl="1" class="active"><span class="num">01</span>클래식 가격형</button>
+      <button data-tpl="2"><span class="num">02</span>할인율 영웅형</button>
+      <button data-tpl="3"><span class="num">03</span>특가 카피형</button>
+      <button data-tpl="4"><span class="num">04</span>시즌 한정형</button>
+      <button data-tpl="5"><span class="num">05</span>럭셔리 다크</button>
+      <button data-tpl="6"><span class="num">06</span>풀이미지 오버레이</button>
+      <button data-tpl="7"><span class="num">07</span>백화점 비교형</button>
+      <button data-tpl="8"><span class="num">08</span>미니멀 시그니처</button>
+    </div>
+  </header>
+
+  <!-- SINGLE INPUT PANEL -->
+  <div id="panel-single" class="panel">
+    <h2>단일형 입력 (모든 템플릿 공유)</h2>
+    <div class="field">
+      <label>상품 이미지</label>
+      <label class="file-input" id="fileLabelS">
+        <span id="fileNameS">클릭해서 이미지 업로드 (Ctrl+V 붙여넣기 가능)</span>
+        <input type="file" id="imgS" accept="image/*">
+      </label>
+    </div>
+    <div class="row2">
+      <div class="field"><label>브랜드 (영문)</label><input type="text" id="brandEn" value="Moncler"></div>
+      <div class="field"><label>브랜드 (한글)</label><input type="text" id="brandKr" value="몽클레어"></div>
+    </div>
+    <div class="field">
+      <label>상품명 / 부연설명</label>
+      <input type="text" id="prodName" value="MAYA 다운 자켓">
+    </div>
+    <div class="row2">
+      <div class="field"><label>공식 가격 (정가)</label><input type="number" id="official" value="3100000"></div>
+      <div class="field"><label>판매가</label><input type="number" id="sale" value="2047650"></div>
+    </div>
+    <div class="field">
+      <label>구매가 (공급가) — 마진 참고용, 카드에 미노출</label>
+      <input type="number" id="cost" value="1000000">
+    </div>
+    <div class="computed" id="computedS">
+      <span>할인율 <strong class="disc" id="discPctS">34%</strong></span>
+      <span>예상 마진 <strong id="marginS">약 105만원</strong></span>
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <label>판매가 라벨 (T1/T7에서 사용)</label>
+      <input type="text" id="priceLabel" value="비아엘리떼 컨시어지 가">
+    </div>
+    <div class="field">
+      <label>특가 카피 (T3 전용 — 빨간 라인)</label>
+      <input type="text" id="t3Copy" value="오늘의 비아엘리떼 특가">
+    </div>
+    <div class="field">
+      <label>한정 카피 (T4 전용 — 상단 빨강 배너)</label>
+      <input type="text" id="t4Banner" value="LIMITED · 오늘 단 하루">
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" id="downloadS">PNG로 저장</button>
+      <button class="btn btn-ghost" id="resetS">초기화</button>
+    </div>
+    <div class="hint">템플릿은 상단 버튼으로 전환. 입력 데이터는 모든 템플릿에 공유됩니다.</div>
+  </div>
+
+  <!-- LIST INPUT PANEL -->
+  <div id="panel-list" class="panel" style="display:none;">
+    <h2>리스트형 입력</h2>
+    <div id="productForms"></div>
+    <button class="add-product-btn" id="addProduct">+ 상품 추가</button>
+    <div class="field">
+      <label>제목 (상단 표기)</label>
+      <input type="text" id="listTitle" value="이번 주 추천 셀렉션">
+    </div>
+    <div class="actions">
+      <button class="btn btn-primary" id="downloadA">PNG로 저장</button>
+      <button class="btn btn-ghost" id="resetA">초기화</button>
+    </div>
+  </div>
+
+  <!-- PREVIEWS -->
+  <div class="preview-wrap">
+    <div class="preview-label">미리보기 (저장은 2x 고해상도)</div>
+
+    <!-- T1 -->
+    <div class="canvas-frame tpl-frame" data-tpl="1">
+      <div class="card t1" id="card1">
+        <div class="top-band"><img class="js-logo" alt="VIA ELITE"></div>
+        <div class="product-area">
+          <div class="discount-badge"><span class="num" data-bind="discount">34</span><span class="pct">%</span></div>
+          <div class="placeholder">상품 이미지를 업로드하세요</div>
+          <img class="prod" style="display:none;" data-bind="img" alt="">
+        </div>
+        <div class="info-area">
+          <div class="brand-line">
+            <span class="brand-en" data-bind="brandEn">Moncler</span>
+            <span class="brand-kr" data-bind="brandKr">몽클레어</span>
+          </div>
+          <div class="product-name" data-bind="prodName">MAYA 다운 자켓</div>
+          <div class="price-original-row">
+            <span class="price-label-small">공식 가격</span>
+            <span class="price-original" data-bind="official">3,100,000원</span>
+          </div>
+          <div class="price-sale-row">
+            <span class="price-sale-label" data-bind="priceLabel">비아엘리떼 컨시어지 가</span>
+            <span class="price-sale"><span data-bind="sale">2,047,650</span><span class="won">원</span></span>
+          </div>
+        </div>
+        <div class="savings-band">
+          <span class="label">고객 할인 금액</span>
+          <span class="value"><span data-bind="savings">1,052,350</span><span class="won">원</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- T2 -->
+    <div class="canvas-frame tpl-frame" data-tpl="2" style="display:none;">
+      <div class="card t2" id="card2">
+        <div class="top-band"><img class="js-logo" alt="VIA ELITE"></div>
+        <div class="percent-hero">
+          <div class="pct-big"><span data-bind="discount">34</span><span class="sym">%</span></div>
+          <div class="pct-sub">OFF · 비아엘리떼 특별가</div>
+        </div>
+        <div class="product-area-small">
+          <div class="placeholder">상품 이미지를 업로드하세요</div>
+          <img class="prod" style="display:none;" data-bind="img" alt="">
+        </div>
+        <div class="info-compact">
+          <div class="brand-line">
+            <span class="brand-en" data-bind="brandEn">Moncler</span>
+            <span class="brand-kr" data-bind="brandKr">몽클레어</span>
+          </div>
+          <div class="product-name" data-bind="prodName">MAYA 다운 자켓</div>
+          <div class="price-row">
+            <span class="price-original" data-bind="official">3,100,000원</span>
+            <span class="price-sale"><span data-bind="sale">2,047,650</span><span class="won">원</span></span>
+          </div>
+        </div>
+        <div class="savings-band">
+          <span class="label">고객 할인 금액</span>
+          <span class="value"><span data-bind="savings">1,052,350</span><span class="won">원</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- T3 -->
+    <div class="canvas-frame tpl-frame" data-tpl="3" style="display:none;">
+      <div class="card t3" id="card3">
+        <div class="top-band"><img class="js-logo" alt="VIA ELITE"></div>
+        <div class="product-area">
+          <div class="special-tag">
+            <span class="pct-text"><span data-bind="discount">34</span>%</span>
+            <span class="word">특가</span>
+          </div>
+          <div class="placeholder">상품 이미지를 업로드하세요</div>
+          <img class="prod" style="display:none;" data-bind="img" alt="">
+        </div>
+        <div class="info-area">
+          <div class="copy-line" data-bind="t3Copy">오늘의 비아엘리떼 특가</div>
+          <div class="brand-line">
+            <span class="brand-en" data-bind="brandEn">Moncler</span>
+            <span class="brand-kr" data-bind="brandKr">몽클레어</span>
+          </div>
+          <div class="product-name" data-bind="prodName">MAYA 다운 자켓</div>
+          <div class="price-row">
+            <span class="price-original" data-bind="official">3,100,000원</span>
+            <span class="price-sale"><span data-bind="sale">2,047,650</span><span class="won">원</span></span>
+          </div>
+        </div>
+        <div class="savings-band">
+          <span class="label">고객 할인 금액</span>
+          <span class="value"><span data-bind="savings">1,052,350</span><span class="won">원</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- T4 -->
+    <div class="canvas-frame tpl-frame" data-tpl="4" style="display:none;">
+      <div class="card t4" id="card4">
+        <div class="urgent-band" data-bind="t4Banner">LIMITED · 오늘 단 하루</div>
+        <div class="product-area">
+          <div class="discount-corner"><span class="num" data-bind="discount">34</span><span class="pct">%</span></div>
+          <div class="placeholder">상품 이미지를 업로드하세요</div>
+          <img class="prod" style="display:none;" data-bind="img" alt="">
+        </div>
+        <div class="info-area">
+          <div class="brand-line">
+            <span class="brand-en" data-bind="brandEn">Moncler</span>
+            <span class="brand-kr" data-bind="brandKr">몽클레어</span>
+          </div>
+          <div class="product-name" data-bind="prodName">MAYA 다운 자켓</div>
+          <div class="price-row">
+            <span class="price-original" data-bind="official">3,100,000원</span>
+            <span class="price-sale"><span data-bind="sale">2,047,650</span><span class="won">원</span></span>
+          </div>
+        </div>
+        <div class="footer-note">재고 소진 시 종료 · VIA ELITE</div>
+      </div>
+    </div>
+
+    <!-- T5 -->
+    <div class="canvas-frame tpl-frame" data-tpl="5" style="display:none;">
+      <div class="card t5" id="card5">
+        <div class="top-band"><img class="js-logo" alt="VIA ELITE"></div>
+        <div class="product-area">
+          <div class="placeholder" style="color:#5a5246;">상품 이미지를 업로드하세요</div>
+          <img class="prod" style="display:none;" data-bind="img" alt="">
+        </div>
+        <div class="info-area">
+          <div class="exclusive-tag">EXCLUSIVE PRICE</div>
+          <div class="brand-en" data-bind="brandEn">Moncler</div>
+          <div class="brand-kr" data-bind="brandKr">몽클레어</div>
+          <div class="product-name" data-bind="prodName">MAYA 다운 자켓</div>
+          <div class="divider-gold"></div>
+          <div class="price-original" data-bind="official">3,100,000원</div>
+          <div class="price-sale"><span data-bind="sale">2,047,650</span><span class="won">원</span></div>
+        </div>
+        <div class="savings-band">
+          <span class="label">SAVINGS</span>
+          <span class="value"><span data-bind="savings">1,052,350</span><span class="won">원</span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- T6 -->
+    <div class="canvas-frame tpl-frame" data-tpl="6" style="display:none;">
+      <div class="card t6" id="card6">
+        <div class="full-image">
+          <div class="placeholder-full">상품 이미지를 업로드하세요</div>
+          <img style="display:none;" data-bind="img" alt="">
+        </div>
+        <div class="corner-logo"><img class="js-logo" alt="VIA ELITE"></div>
+        <div class="discount-badge"><span class="num" data-bind="discount">34</span><span class="pct">%</span></div>
+        <div class="overlay-bottom">
+          <div class="brand-line">
+            <span class="brand-en" data-bind="brandEn">Moncler</span>
+            <span class="brand-kr" data-bind="brandKr">몽클레어</span>
+          </div>
+          <div class="product-name" data-bind="prodName">MAYA 다운 자켓</div>
+          <div class="price-row">
+            <span class="price-original" data-bind="official">3,100,000원</span>
+            <span class="price-sale"><span data-bind="sale">2,047,650</span><span class="won">원</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- T7 -->
+    <div class="canvas-frame tpl-frame" data-tpl="7" style="display:none;">
+      <div class="card t7" id="card7">
+        <div class="top-band"><img class="js-logo" alt="VIA ELITE"></div>
+        <div class="product-area">
+          <div class="placeholder">상품 이미지를 업로드하세요</div>
+          <img class="prod" style="display:none;" data-bind="img" alt="">
+        </div>
+        <div class="brand-block">
+          <div class="brand-line">
+            <span class="brand-en" data-bind="brandEn">Moncler</span>
+            <span class="brand-kr" data-bind="brandKr">몽클레어</span>
+          </div>
+          <div class="product-name" data-bind="prodName">MAYA 다운 자켓</div>
+        </div>
+        <div class="compare-grid">
+          <div class="compare-col left">
+            <div class="col-label">백화점 정가</div>
+            <div class="col-price" data-bind="official">3,100,000원</div>
+          </div>
+          <div class="compare-col right">
+            <div class="col-label" data-bind="priceLabel">비아엘리떼 컨시어지 가</div>
+            <div class="col-price"><span data-bind="sale">2,047,650</span><span class="won">원</span></div>
+          </div>
+        </div>
+        <div class="compare-note">백화점 대비 <strong><span data-bind="savings">1,052,350</span>원</strong> 더 합리적</div>
+      </div>
+    </div>
+
+    <!-- T8 -->
+    <div class="canvas-frame tpl-frame" data-tpl="8" style="display:none;">
+      <div class="card t8" id="card8">
+        <div class="top-band"><img class="js-logo" alt="VIA ELITE"></div>
+        <div class="product-area">
+          <div class="placeholder">상품 이미지를 업로드하세요</div>
+          <img class="prod" style="display:none;" data-bind="img" alt="">
+        </div>
+        <div class="info-minimal">
+          <div class="hairline"></div>
+          <div class="brand-en" data-bind="brandEn">Moncler</div>
+          <div class="brand-kr" data-bind="brandKr">몽클레어</div>
+          <div class="product-name" data-bind="prodName">MAYA 다운 자켓</div>
+          <div class="price-inline">
+            <span data-bind="official">3,100,000원</span>
+            <span class="sep">→</span>
+            <span class="sale-val"><span data-bind="sale">2,047,650</span>원</span>
+          </div>
+          <div class="pct-small"><span data-bind="discount">34</span>% OFF</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="canvas-frame" id="previewList" style="display:none;">
+      <div class="card-list" id="cardList">
+        <div class="list-top"><img class="js-logo" alt="VIA ELITE"></div>
+        <div class="list-title-wrap"><div class="lh-title" id="renderListTitle">이번 주 추천 셀렉션</div></div>
+        <div class="list-body"><div id="listRows"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function fmtWon(n) { if (!n || isNaN(n)) return '0원'; return Number(n).toLocaleString('ko-KR') + '원'; }
+function fmtNumber(n) { if (!n || isNaN(n)) return '0'; return Number(n).toLocaleString('ko-KR'); }
+function fmtMarginShort(margin) {
+  const sign = margin < 0 ? '-' : '';
+  const abs = Math.abs(margin);
+  if (abs === 0) return '0';
+  const eok = Math.floor(abs / 100000000);
+  const remainder = abs % 100000000;
+  const man = Math.round(remainder / 10000);
+  if (eok > 0 && man > 0) return `${sign}약 ${eok}억 ${man.toLocaleString()}만`;
+  if (eok > 0) return `${sign}약 ${eok}억`;
+  return `${sign}약 ${man.toLocaleString()}만`;
+}
+function calcDiscount(official, sale) {
+  if (!official || !sale || official <= 0) return 0;
+  return Math.round(((official - sale) / official) * 100);
+}
+
+let currentImgSrc = null;
+
+function renderSingle() {
+  const brandEn = document.getElementById('brandEn').value.trim();
+  const brandKr = document.getElementById('brandKr').value.trim();
+  const prodName = document.getElementById('prodName').value.trim();
+  const official = parseInt(document.getElementById('official').value) || 0;
+  const sale = parseInt(document.getElementById('sale').value) || 0;
+  const cost = parseInt(document.getElementById('cost').value) || 0;
+  const priceLabel = document.getElementById('priceLabel').value.trim();
+  const t3Copy = document.getElementById('t3Copy').value.trim();
+  const t4Banner = document.getElementById('t4Banner').value.trim();
+
+  const discount = calcDiscount(official, sale);
+  const savings = Math.max(0, official - sale);
+  const margin = sale - cost;
+
+  const bindMap = {
+    brandEn, brandKr, prodName,
+    official: fmtWon(official),
+    sale: fmtNumber(sale),
+    savings: fmtNumber(savings),
+    discount: discount,
+    priceLabel, t3Copy, t4Banner
+  };
+
+  document.querySelectorAll('[data-bind]').forEach(el => {
+    const key = el.getAttribute('data-bind');
+    if (key in bindMap) {
+      el.textContent = bindMap[key];
+    } else if (key === 'img' && currentImgSrc) {
+      el.src = currentImgSrc;
+    }
+  });
+
+  document.getElementById('discPctS').textContent = discount + '%';
+  const marginEl = document.getElementById('marginS');
+  marginEl.textContent = fmtMarginShort(margin) + '원';
+  marginEl.className = margin >= 0 ? 'profit' : 'loss';
+}
+
+['brandEn','brandKr','prodName','official','sale','cost','priceLabel','t3Copy','t4Banner']
+  .forEach(id => document.getElementById(id).addEventListener('input', renderSingle));
+
+// Image upload
+const imgInput = document.getElementById('imgS');
+const fileLabel = document.getElementById('fileLabelS');
+const fileName = document.getElementById('fileNameS');
+function setProductImage(src, name) {
+  currentImgSrc = src;
+  document.querySelectorAll('[data-bind="img"]').forEach(el => {
+    el.src = src;
+    el.style.display = 'block';
+  });
+  document.querySelectorAll('.tpl-frame .placeholder, .tpl-frame .placeholder-full').forEach(el => { el.style.display = 'none'; });
+  fileLabel.classList.add('has-image');
+  fileName.textContent = name || '이미지 업로드됨';
+}
+function loadImageFromFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => setProductImage(e.target.result, file.name);
+  reader.readAsDataURL(file);
+}
+imgInput.addEventListener('change', e => loadImageFromFile(e.target.files[0]));
+document.addEventListener('paste', e => {
+  if (document.getElementById('panel-single').style.display === 'none') return;
+  const items = (e.clipboardData || window.clipboardData).items;
+  for (const item of items) {
+    if (item.type.indexOf('image') === 0) { loadImageFromFile(item.getAsFile()); e.preventDefault(); return; }
+  }
+});
+
+// Reset
+document.getElementById('resetS').addEventListener('click', () => {
+  ['brandEn','brandKr','prodName','official','sale','cost'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('priceLabel').value = '비아엘리떼 컨시어지 가';
+  document.getElementById('t3Copy').value = '오늘의 비아엘리떼 특가';
+  document.getElementById('t4Banner').value = 'LIMITED · 오늘 단 하루';
+  currentImgSrc = null;
+  document.querySelectorAll('[data-bind="img"]').forEach(el => { el.style.display = 'none'; });
+  document.querySelectorAll('.tpl-frame .placeholder, .tpl-frame .placeholder-full').forEach(el => { el.style.display = 'block'; });
+  fileLabel.classList.remove('has-image');
+  fileName.textContent = '클릭해서 이미지 업로드 (Ctrl+V 붙여넣기 가능)';
+  renderSingle();
+});
+
+// Download
+function downloadCard(cardEl, prefix) {
+  html2canvas(cardEl, { scale: 2, backgroundColor: null, useCORS: true }).then(canvas => {
+    const link = document.createElement('a');
+    const brand = document.getElementById('brandEn').value.trim() || 'product';
+    link.download = `viaelite_${prefix}_${brand}_${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+}
+document.getElementById('downloadS').addEventListener('click', () => {
+  const activeTpl = document.querySelector('.tpl-frame:not([style*="display:none"]):not([style*="display: none"])');
+  if (activeTpl) {
+    const tplNum = activeTpl.getAttribute('data-tpl');
+    downloadCard(activeTpl.querySelector('.card'), `t${tplNum}`);
+  }
+});
+
+// LIST
+const productsState = [
+  { brandEn: 'Balmain', brandKr: '발망', official: 3200000, sale: 2090000, img: null },
+  { brandEn: 'Miumiu', brandKr: '미우미우', official: 2500000, sale: 1800000, img: null },
+  { brandEn: 'Saint Laurent', brandKr: '생로랑', official: 1200000, sale: 860000, img: null }
+];
+function renderProductForms() {
+  const wrap = document.getElementById('productForms');
+  wrap.innerHTML = '';
+  productsState.forEach((p, idx) => {
+    const div = document.createElement('div');
+    div.className = 'product-form';
+    div.innerHTML = `
+      <div class="pf-head">
+        <span class="pf-title">상품 #${idx + 1}</span>
+        <button class="pf-remove" data-idx="${idx}">삭제</button>
+      </div>
+      <div class="field">
+        <label>이미지</label>
+        <label class="file-input">
+          <span>${p.img ? '이미지 등록됨' : '클릭해서 업로드'}</span>
+          <input type="file" data-idx="${idx}" accept="image/*" class="pf-img">
+        </label>
+      </div>
+      <div class="row2">
+        <div class="field"><label>브랜드 (영문)</label><input type="text" data-idx="${idx}" data-key="brandEn" value="${p.brandEn}" class="pf-input"></div>
+        <div class="field"><label>브랜드 (한글)</label><input type="text" data-idx="${idx}" data-key="brandKr" value="${p.brandKr}" class="pf-input"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label>공식 가격</label><input type="number" data-idx="${idx}" data-key="official" value="${p.official}" class="pf-input"></div>
+        <div class="field"><label>판매가</label><input type="number" data-idx="${idx}" data-key="sale" value="${p.sale}" class="pf-input"></div>
+      </div>
+    `;
+    wrap.appendChild(div);
+  });
+  document.querySelectorAll('.pf-input').forEach(el => {
+    el.addEventListener('input', e => {
+      const idx = parseInt(e.target.dataset.idx);
+      const key = e.target.dataset.key;
+      const value = e.target.type === 'number' ? parseInt(e.target.value) || 0 : e.target.value;
+      productsState[idx][key] = value;
+      renderList();
+    });
+  });
+  document.querySelectorAll('.pf-remove').forEach(el => {
+    el.addEventListener('click', e => {
+      productsState.splice(parseInt(e.target.dataset.idx), 1);
+      renderProductForms(); renderList();
+    });
+  });
+  document.querySelectorAll('.pf-img').forEach(el => {
+    el.addEventListener('change', e => {
+      const idx = parseInt(e.target.dataset.idx);
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => { productsState[idx].img = ev.target.result; renderProductForms(); renderList(); };
+      reader.readAsDataURL(file);
+    });
+  });
+}
+function renderList() {
+  document.getElementById('renderListTitle').textContent = document.getElementById('listTitle').value || '';
+  const rows = document.getElementById('listRows');
+  rows.innerHTML = '';
+  productsState.forEach(p => {
+    const hasOfficial = p.official && p.official > p.sale;
+    const discount = hasOfficial ? calcDiscount(p.official, p.sale) : 0;
+    const row = document.createElement('div');
+    row.className = 'list-row';
+    row.innerHTML = `
+      <div class="img-box">${p.img ? `<img src="${p.img}">` : `<span class="ph">상품 이미지</span>`}</div>
+      <div class="info">
+        <div class="brand-line">
+          <span class="b-en">${p.brandEn || ''}</span>
+          <span class="b-kr">${p.brandKr || ''}</span>
+          ${discount > 0 ? `<span class="b-disc">${discount}%↓</span>` : ''}
+        </div>
+        <div class="prices">
+          ${hasOfficial ? `<div class="pl">공식 가격</div><div class="pv original">${fmtWon(p.official)}</div>` : ''}
+          <div class="pl">판매가</div><div class="pv bold">${fmtWon(p.sale)}</div>
+        </div>
+      </div>`;
+    rows.appendChild(row);
+  });
+}
+document.getElementById('addProduct').addEventListener('click', () => {
+  productsState.push({ brandEn: '', brandKr: '', official: 0, sale: 0, img: null });
+  renderProductForms(); renderList();
+});
+document.getElementById('listTitle').addEventListener('input', renderList);
+document.getElementById('resetA').addEventListener('click', () => { productsState.length = 0; renderProductForms(); renderList(); });
+document.getElementById('downloadA').addEventListener('click', () => { downloadCard(document.getElementById('cardList'), 'list'); });
+
+// Top-level mode toggle
+const panelSingle = document.getElementById('panel-single');
+const panelList = document.getElementById('panel-list');
+const previewList = document.getElementById('previewList');
+const tplPicker = document.getElementById('tplPicker');
+const topSingle = document.getElementById('top-single');
+const topList = document.getElementById('top-list');
+
+function showTemplate(tplNum) {
+  document.querySelectorAll('.tpl-frame').forEach(el => {
+    el.style.display = el.getAttribute('data-tpl') === String(tplNum) ? 'flex' : 'none';
+  });
+  document.querySelectorAll('#tplPicker button').forEach(b => {
+    b.classList.toggle('active', b.getAttribute('data-tpl') === String(tplNum));
+  });
+}
+document.querySelectorAll('#tplPicker button').forEach(b => {
+  b.addEventListener('click', () => showTemplate(b.getAttribute('data-tpl')));
+});
+
+topSingle.addEventListener('click', () => {
+  panelSingle.style.display = 'block'; panelList.style.display = 'none';
+  tplPicker.style.display = 'flex';
+  previewList.style.display = 'none';
+  const activeTpl = document.querySelector('#tplPicker button.active');
+  showTemplate(activeTpl ? activeTpl.getAttribute('data-tpl') : '1');
+  topSingle.classList.add('active'); topList.classList.remove('active');
+});
+topList.addEventListener('click', () => {
+  panelSingle.style.display = 'none'; panelList.style.display = 'block';
+  tplPicker.style.display = 'none';
+  document.querySelectorAll('.tpl-frame').forEach(el => { el.style.display = 'none'; });
+  previewList.style.display = 'flex';
+  topSingle.classList.remove('active'); topList.classList.add('active');
+});
+
+// Logo
+(function setLogo() {
+  const src = 'data:image/png;base64,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';
+  document.querySelectorAll('.js-logo').forEach(el => { el.src = src; });
+})();
+
+// Initial render
+renderSingle();
+renderProductForms();
+renderList();
+
+// ============ AUTHENTICATION ============
+// ↓↓↓ Apps Script 배포 후 받은 URL을 아래 따옴표 안에 붙여넣으세요 ↓↓↓
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzXMEHv1hH0LljlP1bFTCpvj9cyJLgmvCtJGMdPQHlMscG-r6n9DbrMxaU4gDhSRhT7/exec';
+// ↑↑↑ 위 한 줄만 수정하면 됩니다 ↑↑↑
+
+const isDemoMode = (APPS_SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE');
+
+function showApp(user) {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('appRoot').style.display = 'grid';
+  const chip = document.getElementById('userChip');
+  const meta = document.getElementById('userMeta');
+  chip.firstChild.nodeValue = user.name || user.id || '사용자';
+  const metaParts = [];
+  if (user.level) metaParts.push(user.level);
+  if (user['소속']) metaParts.push(user['소속']);
+  meta.textContent = metaParts.length ? '· ' + metaParts.join(' · ') : '';
+}
+
+function showLogin() {
+  document.getElementById('loginOverlay').style.display = 'flex';
+  document.getElementById('appRoot').style.display = 'none';
+  const badge = document.getElementById('loginModeBadge');
+  if (isDemoMode) {
+    badge.className = 'login-mode-badge';
+    badge.innerHTML = '⚠️ 데모 모드 — Apps Script 미설정 상태. 아무 ID/비번이나 입력하면 통과됩니다. 실제 운영 시 설정 필요.';
+  } else {
+    badge.className = 'login-mode-badge ok';
+    badge.textContent = '✓ 시트 인증 활성화됨';
+  }
+}
+
+async function doLogin(id, password) {
+  if (isDemoMode) {
+    return { success: true, name: id + ' (데모)', level: 'DEMO', '소속': '데모 모드', demo: true };
+  }
+  const res = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'login', id, password }),
+    // Note: no Content-Type header so it sends as text/plain (avoids CORS preflight)
+  });
+  return await res.json();
+}
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('loginId').value.trim();
+  const pw = document.getElementById('loginPw').value;
+  const errorEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+
+  errorEl.textContent = '';
+  btn.disabled = true;
+  btn.textContent = '확인 중...';
+
+  try {
+    const result = await doLogin(id, pw);
+    if (result.success) {
+      sessionStorage.setItem('viaelite_session', JSON.stringify(result));
+      showApp(result);
+    } else {
+      errorEl.textContent = result.message || 'ID 또는 비밀번호가 일치하지 않습니다.';
+    }
+  } catch (err) {
+    errorEl.textContent = '서버 연결 오류: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '로그인';
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  sessionStorage.removeItem('viaelite_session');
+  document.getElementById('loginId').value = '';
+  document.getElementById('loginPw').value = '';
+  showLogin();
+});
+
+// Check existing session on page load (탭/창 닫을 때 자동 만료)
+(function checkSession() {
+  const raw = sessionStorage.getItem('viaelite_session');
+  if (raw) {
+    try {
+      const user = JSON.parse(raw);
+      if (user && user.success) {
+        showApp(user);
+        return;
+      }
+    } catch (e) {}
+  }
+  showLogin();
+})();
+
+</script>
+
+</body>
+</html>

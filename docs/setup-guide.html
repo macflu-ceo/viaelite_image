@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>비아엘리떼 상품카드 생성기 — 로그인 시스템 셋업 가이드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: #f4f3ef; color: #2a2a2a; line-height: 1.7; padding: 32px 16px; }
+  .doc { max-width: 820px; margin: 0 auto; background: #fff; padding: 56px 64px; border-radius: 16px; box-shadow: 0 4px 30px rgba(0,0,0,0.06); }
+  h1 { font-family: 'Cormorant Garamond', serif; font-size: 38px; color: #1c3829; letter-spacing: 0.02em; margin-bottom: 8px; }
+  .subtitle { color: #777; font-size: 14px; letter-spacing: 0.08em; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 2px solid #1c3829; }
+  h2 { color: #1c3829; font-size: 22px; margin: 44px 0 18px; padding-left: 14px; border-left: 4px solid #1c3829; }
+  h3 { color: #1c3829; font-size: 16px; margin: 22px 0 10px; font-weight: 700; }
+  p { margin-bottom: 12px; font-size: 15px; color: #333; }
+  ol, ul { margin: 12px 0 18px 24px; }
+  ol li, ul li { margin-bottom: 8px; font-size: 15px; }
+  ol ol, ol ul, ul ol, ul ul { margin: 6px 0 6px 18px; }
+  strong { color: #1c3829; }
+  .step-num {
+    display: inline-block; background: #1c3829; color: #fff;
+    width: 28px; height: 28px; border-radius: 50%;
+    text-align: center; line-height: 28px;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 14px;
+    margin-right: 10px;
+  }
+  code { font-family: 'JetBrains Mono', monospace; background: #f6f2e9; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #c0392b; }
+  pre { background: #1c3829; color: #f4f3ef; padding: 16px 20px; border-radius: 8px; margin: 14px 0; font-family: 'JetBrains Mono', monospace; font-size: 13px; overflow-x: auto; line-height: 1.5; }
+  .callout { background: #f6f2e9; border-left: 4px solid #c9a96e; padding: 14px 18px; margin: 16px 0; border-radius: 0 8px 8px 0; font-size: 14px; }
+  .warning { background: #fdecea; border-left: 4px solid #c0392b; padding: 14px 18px; margin: 16px 0; border-radius: 0 8px 8px 0; font-size: 14px; }
+  .tip { background: #e8f4ee; border-left: 4px solid #1c3829; padding: 14px 18px; margin: 16px 0; border-radius: 0 8px 8px 0; font-size: 14px; }
+  .table-sample { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+  .table-sample th { background: #1c3829; color: #fff; padding: 10px; text-align: left; font-weight: 600; letter-spacing: 0.05em; }
+  .table-sample td { padding: 9px 10px; border-bottom: 1px solid #ecebe6; }
+  .table-sample tr:nth-child(even) td { background: #faf9f5; }
+  .checklist { list-style: none; margin-left: 0; }
+  .checklist li { padding-left: 32px; position: relative; margin-bottom: 10px; }
+  .checklist li::before {
+    content: '☐'; position: absolute; left: 0; top: 0;
+    color: #1c3829; font-size: 18px;
+  }
+  hr { border: 0; border-top: 1px dashed #d8d3c7; margin: 32px 0; }
+  a { color: #1c3829; font-weight: 600; }
+  .toc { background: #faf9f5; padding: 20px 24px; border-radius: 10px; margin-bottom: 30px; }
+  .toc h3 { margin-top: 0; }
+  .toc ol li { font-size: 14px; margin-bottom: 4px; }
+  .toc a { text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  .file-mention { background: #1c3829; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 13px; font-weight: 500; font-family: inherit; }
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+<h1>로그인 시스템 셋업 가이드</h1>
+<div class="subtitle">VIA ELITE 상품카드 생성기 · 구글 시트 연동 인증</div>
+
+<div class="callout">
+<strong>전체 소요 시간:</strong> 약 15~20분 · <strong>난이도:</strong> 비개발자도 가능 · <strong>비용:</strong> 0원
+</div>
+
+<div class="toc">
+<h3>목차</h3>
+<ol>
+<li><a href="#step1">구글 시트 만들기 (3분)</a></li>
+<li><a href="#step2">시트 ID 복사 (1분)</a></li>
+<li><a href="#step3">Apps Script 코드 등록 (3분)</a></li>
+<li><a href="#step4">Apps Script 배포 → URL 받기 (5분)</a></li>
+<li><a href="#step5">HTML 파일에 URL 붙여넣기 (2분)</a></li>
+<li><a href="#step6">테스트 로그인 (1분)</a></li>
+<li><a href="#manage">사용자 추가/제거/비밀번호 변경</a></li>
+<li><a href="#trouble">문제 해결</a></li>
+</ol>
+</div>
+
+<!-- ============ STEP 1 ============ -->
+<h2 id="step1"><span class="step-num">1</span>구글 시트 만들기</h2>
+
+<ol>
+<li><a href="https://sheets.google.com" target="_blank">sheets.google.com</a> 접속 → <strong>빈 스프레드시트</strong> 만들기</li>
+<li>시트 제목을 <strong>"비아엘리떼 컨시어지 관리"</strong>로 변경 (좌상단 클릭)</li>
+<li>화면 하단 시트 탭(기본값 "Sheet1")을 더블클릭하고 이름을 <strong>"컨시어지명단"</strong>으로 변경</li>
+<li>1행에 다음 9개 컬럼 헤더를 그대로 입력 (순서 중요):</li>
+</ol>
+
+<table class="table-sample">
+<thead><tr>
+<th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th>
+</tr></thead>
+<tbody><tr>
+<td>ID</td><td>비밀번호</td><td>이름</td><td>활성</td><td>레벨</td><td>소속</td><td>가입일</td><td>마지막 로그인</td><td>로그인 횟수</td>
+</tr></tbody>
+</table>
+
+<p>5. 2행부터 실제 컨시어지 정보를 입력합니다. 예시:</p>
+
+<table class="table-sample">
+<thead><tr>
+<th>ID</th><th>비밀번호</th><th>이름</th><th>활성</th><th>레벨</th><th>소속</th><th>가입일</th><th>마지막 로그인</th><th>로그인 횟수</th>
+</tr></thead>
+<tbody>
+<tr><td>kim001</td><td>vip2026</td><td>김민지</td><td>TRUE</td><td>시니어</td><td>강남지점</td><td>2026-01-15</td><td></td><td>0</td></tr>
+<tr><td>park002</td><td>luxury88</td><td>박지훈</td><td>TRUE</td><td>일반</td><td>온라인팀</td><td>2026-02-10</td><td></td><td>0</td></tr>
+<tr><td>lee003</td><td>elite2026</td><td>이수민</td><td>TRUE</td><td>매니저</td><td>청담편집샵</td><td>2026-03-05</td><td></td><td>0</td></tr>
+</tbody>
+</table>
+
+<div class="tip">
+<strong>팁:</strong> "활성" 컬럼은 <code>TRUE</code>(활성) 또는 <code>FALSE</code>(비활성)로. 비활성으로 두면 로그인 차단됩니다. "마지막 로그인"과 "로그인 횟수"는 비워두세요 — 시스템이 자동으로 채웁니다.
+</div>
+
+<div class="warning">
+<strong>중요 — 시트 공유 권한:</strong> 비밀번호가 평문으로 들어있으므로 시트 공유 권한을 본사 인원에게만 한정하세요. 컨시어지 본인에게는 공유하지 마세요. (우상단 "공유" → 본사 담당자만 추가)
+</div>
+
+<!-- ============ STEP 2 ============ -->
+<h2 id="step2"><span class="step-num">2</span>시트 ID 복사</h2>
+
+<p>브라우저 주소창의 URL에서 시트 ID를 찾아 복사합니다.</p>
+
+<pre>https://docs.google.com/spreadsheets/d/<strong style="color:#f5d491;">1A2B3C4D5E6F7G8H9I0J_여기가_시트_ID</strong>/edit#gid=0</pre>
+
+<p>위에서 굵게 표시된 부분(<code>/d/</code>와 <code>/edit</code> 사이)이 시트 ID입니다. 그 값을 메모장에 임시로 복사해두세요.</p>
+
+<!-- ============ STEP 3 ============ -->
+<h2 id="step3"><span class="step-num">3</span>Apps Script 코드 등록</h2>
+
+<ol>
+<li>방금 만든 시트에서 상단 메뉴 <strong>확장 프로그램 → Apps Script</strong> 클릭</li>
+<li>새 탭으로 Apps Script 편집기가 열림. 기본 코드 <code>function myFunction() {...}</code>를 <strong>전부 선택해서 삭제</strong></li>
+<li><span class="file-mention">server/viaelite_auth.gs</span> 파일을 메모장 등에서 열어 내용 전체 복사</li>
+<li>Apps Script 편집기에 붙여넣기</li>
+<li>코드 위쪽 <code>const SHEET_ID = '여기에_본인_시트_ID_붙여넣기';</code> 부분의 따옴표 안 텍스트를 2단계에서 복사한 시트 ID로 교체</li>
+<li>좌상단 프로젝트 이름 "제목 없는 프로젝트" 클릭 → <strong>"비아엘리떼 인증"</strong>으로 변경</li>
+<li><strong>Ctrl+S</strong> (또는 Cmd+S)로 저장</li>
+</ol>
+
+<div class="tip">
+<strong>연결 확인 (선택):</strong> 편집기 상단에서 함수 선택 드롭다운으로 <code>testConnection</code> 선택 → <strong>실행</strong> 버튼 클릭. 최초 실행 시 권한 승인 요청 → 본인 구글 계정으로 승인. 하단 "실행 로그"에 헤더와 등록 사용자 수가 표시되면 성공.
+</div>
+
+<!-- ============ STEP 4 ============ -->
+<h2 id="step4"><span class="step-num">4</span>Apps Script 배포 → URL 받기</h2>
+
+<ol>
+<li>편집기 우측 상단 <strong>배포 (Deploy)</strong> 버튼 클릭 → <strong>새 배포</strong></li>
+<li>좌측 톱니바퀴 ⚙️ 아이콘 클릭 → <strong>웹 앱</strong> 선택</li>
+<li>다음 정보 입력:
+  <ul>
+  <li><strong>설명:</strong> "비아엘리떼 인증 v1"</li>
+  <li><strong>다음 사용자 인증으로 실행:</strong> "나 (본인 이메일)"</li>
+  <li><strong>액세스 권한이 있는 사용자:</strong> "모든 사용자"</li>
+  </ul>
+</li>
+<li><strong>배포</strong> 버튼 클릭</li>
+<li>권한 승인 화면이 뜨면 본인 구글 계정 선택 → "고급" → "프로젝트로 이동(안전하지 않음)" → "허용"
+  <div class="warning" style="margin-top:8px;"><strong>"안전하지 않음" 경고는 정상입니다.</strong> 구글이 자체 검증을 안 거친 본인 스크립트라서 뜨는 표준 경고예요. 본인이 만든 스크립트이므로 안전합니다.</div>
+</li>
+<li>배포 완료 후 표시되는 <strong>웹 앱 URL</strong>을 복사 (https://script.google.com/macros/s/.../exec 형태)</li>
+</ol>
+
+<div class="callout">
+<strong>이 URL이 핵심입니다.</strong> 다른 곳에 임시로 복사해두세요. 분실 시: Apps Script 편집기 → 배포 → 배포 관리에서 다시 확인 가능.
+</div>
+
+<!-- ============ STEP 5 ============ -->
+<h2 id="step5"><span class="step-num">5</span>HTML 파일에 URL 붙여넣기</h2>
+
+<ol>
+<li><span class="file-mention">index.html</span>을 메모장이나 텍스트 편집기로 열기 (브라우저 말고)
+  <div class="tip" style="margin-top:8px;"><strong>맥:</strong> 파일 우클릭 → "다음으로 열기" → 텍스트 편집기. <strong>윈도우:</strong> 파일 우클릭 → "연결 프로그램" → 메모장</div>
+</li>
+<li><strong>Ctrl+F</strong>(찾기)로 <code>YOUR_APPS_SCRIPT_URL_HERE</code> 검색</li>
+<li>이 텍스트를 4단계 6번에서 복사한 웹 앱 URL로 교체. 결과는 아래처럼:</li>
+</ol>
+
+<pre>// 변경 전
+const APPS_SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+
+// 변경 후 (실제 URL 예시)
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycb.../exec';</pre>
+
+<p>4. 저장 (Ctrl+S)</p>
+
+<!-- ============ STEP 6 ============ -->
+<h2 id="step6"><span class="step-num">6</span>테스트 로그인</h2>
+
+<ol>
+<li><span class="file-mention">index.html</span>을 더블클릭해서 브라우저로 열기</li>
+<li>로그인 화면이 뜨면 시트에 등록한 ID/비밀번호 입력 (예: <code>kim001</code> / <code>vip2026</code>)</li>
+<li>"로그인" 클릭 → 카드 생성기 화면으로 이동하면 성공</li>
+<li>구글 시트로 돌아가서 해당 사용자 행의 "마지막 로그인" 시각과 "로그인 횟수"가 자동으로 갱신됐는지 확인</li>
+</ol>
+
+<ul class="checklist">
+<li>로그인 화면 우하단에 <strong>"✓ 시트 인증 활성화됨"</strong> 초록 배지가 보임</li>
+<li>잘못된 ID/비번 입력 시 "ID 또는 비밀번호가 일치하지 않습니다" 표시됨</li>
+<li>활성 컬럼이 FALSE인 사용자는 "비활성화된 계정입니다" 표시됨</li>
+<li>로그인 후 우상단에 사용자 이름·레벨·소속이 표시됨</li>
+<li>탭/창을 닫고 다시 열면 로그인 화면이 다시 나타남 (세션 만료 정상)</li>
+</ul>
+
+<hr>
+
+<!-- ============ 사용자 관리 ============ -->
+<h2 id="manage">사용자 추가 / 제거 / 비밀번호 변경</h2>
+
+<h3>새 컨시어지 추가</h3>
+<p>구글 시트에서 새 행에 정보 입력 → 시트가 자동 저장됨 → 즉시 로그인 가능. HTML 수정 불필요.</p>
+
+<h3>컨시어지 비활성화 (퇴사·자격박탈 등)</h3>
+<p>해당 행의 <strong>"활성"</strong> 컬럼을 <code>TRUE</code>에서 <code>FALSE</code>로 변경. 즉시 차단됨 (이미 로그인된 세션도 다음 로그인부터 차단).</p>
+
+<h3>비밀번호 변경</h3>
+<p>본사가 시트에서 직접 "비밀번호" 컬럼 값 수정. 본인이 바꾸는 기능은 현재 미지원 (필요하면 추후 추가 가능).</p>
+
+<h3>로그인 활동 확인</h3>
+<p>시트의 "마지막 로그인"과 "로그인 횟수" 컬럼이 자동으로 채워지므로, 누가 활발히 쓰는지 시트만 봐도 파악 가능.</p>
+
+<hr>
+
+<!-- ============ 문제 해결 ============ -->
+<h2 id="trouble">문제 해결</h2>
+
+<h3>"서버 연결 오류"가 뜸</h3>
+<ul>
+<li>5단계에서 URL을 정확히 붙여넣었는지 확인 (앞뒤 따옴표 유지)</li>
+<li>Apps Script 배포 시 "액세스 권한: 모든 사용자"로 설정했는지 확인</li>
+<li>배포를 한 번 더 새로 (배포 → 새 배포)</li>
+</ul>
+
+<h3>"비활성화된 계정입니다"가 뜸</h3>
+<ul>
+<li>해당 사용자 행의 "활성" 컬럼이 <code>TRUE</code>인지 확인 (영문 대문자)</li>
+</ul>
+
+<h3>"시트를 찾을 수 없습니다"</h3>
+<ul>
+<li>시트 하단 탭 이름이 정확히 <strong>"컨시어지명단"</strong>인지 확인 (공백·오타 주의)</li>
+<li>또는 Apps Script 코드의 <code>SHEET_NAME</code> 값을 본인 시트 탭 이름과 일치시킴</li>
+</ul>
+
+<h3>로그인 화면 하단에 "⚠️ 데모 모드" 배지가 뜸</h3>
+<ul>
+<li>HTML 파일의 <code>APPS_SCRIPT_URL</code>이 아직 <code>YOUR_APPS_SCRIPT_URL_HERE</code>인 상태. 5단계 다시 진행</li>
+</ul>
+
+<hr>
+
+<h2>이 시스템의 한계 (솔직한 설명)</h2>
+<ul>
+<li><strong>보안 수준:</strong> "비공식 내부 도구" 수준. 시트 공유 권한 관리 잘하면 충분히 안전. 단, 진짜 회원가입·결제·민감정보를 다루는 정식 서비스라면 별도 개발 필요.</li>
+<li><strong>비밀번호:</strong> 평문 저장. 본사 시트 접근자만이 볼 수 있도록 권한 관리 필수.</li>
+<li><strong>호출량:</strong> Apps Script는 일일 호출량 제한이 있음. 컨시어지 100명 안팎이면 무리 없음. 1,000명 이상으로 커지면 진짜 백엔드로 이전 권장.</li>
+<li><strong>세션:</strong> 탭/창 닫으면 세션 만료(요청대로). 진짜 토큰 기반 인증 아님.</li>
+</ul>
+
+<div class="callout">
+<strong>다음 단계:</strong> 컨시어지 베타 테스트로 5~10명 운영해보고, 반응 좋으면 (a) 외주 개발자에게 정식 회원시스템 의뢰 또는 (b) Claude Code로 직접 업그레이드 진행. 이 셋업은 그때까지의 임시 단계로 활용하기 좋아요.
+</div>
+
+</div>
+
+</body>
+</html>
