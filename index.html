@@ -396,23 +396,16 @@
     .preview-wrap { width: 100%; }
     .canvas-frame {
       width: 100%;
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
       display: flex;
-      justify-content: flex-start;
-      padding: 0 12px 8px;
-      scroll-padding-left: 12px;
+      justify-content: center;
+      overflow: hidden;
     }
     .canvas-frame .card,
     .canvas-frame .card-list {
+      transform-origin: top center;
       flex-shrink: 0;
     }
     .preview-label { padding: 0 4px; }
-    .preview-label::after {
-      content: ' · 좌우 스와이프';
-      opacity: 0.6;
-      font-size: 10px;
-    }
 
     /* Input fields */
     .field input[type=text], .field input[type=number] { font-size: 14px; padding: 11px 12px; }
@@ -1017,6 +1010,7 @@ function showTemplate(tplNum) {
   document.querySelectorAll('#tplPicker button').forEach(b => {
     b.classList.toggle('active', b.getAttribute('data-tpl') === String(tplNum));
   });
+  if (typeof fitCardsToMobile === 'function') setTimeout(fitCardsToMobile, 50);
 }
 document.querySelectorAll('#tplPicker button').forEach(b => {
   b.addEventListener('click', () => showTemplate(b.getAttribute('data-tpl')));
@@ -1156,6 +1150,41 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   }
   showLogin();
 })();
+
+
+// ============ MOBILE FIT (transform: scale based on viewport width) ============
+function fitCardsToMobile() {
+  const isMobile = window.innerWidth <= 700;
+  const frames = document.querySelectorAll('.canvas-frame');
+  frames.forEach(frame => {
+    const card = frame.querySelector('.card, .card-list');
+    if (!card) return;
+    if (!isMobile) {
+      card.style.transform = '';
+      frame.style.height = '';
+      return;
+    }
+    const wasHidden = (frame.style.display === 'none');
+    let restore = null;
+    if (wasHidden) {
+      restore = frame.style.cssText;
+      frame.style.display = 'flex';
+      frame.style.visibility = 'hidden';
+      frame.style.position = 'absolute';
+    }
+    card.style.transform = '';
+    const naturalH = card.offsetHeight;
+    if (wasHidden) {
+      frame.style.cssText = restore;
+    }
+    const padding = 24;
+    const scale = Math.min(1, (window.innerWidth - padding) / 540);
+    card.style.transform = `scale(${scale})`;
+    frame.style.height = (naturalH * scale + 8) + 'px';
+  });
+}
+window.addEventListener('load', () => setTimeout(fitCardsToMobile, 100));
+window.addEventListener('resize', () => { clearTimeout(window._fitTm); window._fitTm = setTimeout(fitCardsToMobile, 150); });
 
 </script>
 
