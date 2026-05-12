@@ -1161,29 +1161,47 @@ function fitCardsToMobile() {
     if (!card) return;
     if (!isMobile) {
       card.style.transform = '';
+      card.style.transformOrigin = '';
       frame.style.height = '';
       return;
     }
-    const wasHidden = (frame.style.display === 'none');
-    let restore = null;
-    if (wasHidden) {
-      restore = frame.style.cssText;
-      frame.style.display = 'flex';
-      frame.style.visibility = 'hidden';
-      frame.style.position = 'absolute';
-    }
+    // Only fit currently visible frames (computed style, not just inline)
+    const computedDisplay = window.getComputedStyle(frame).display;
+    if (computedDisplay === 'none') return;
+    // Reset transform and force reflow to measure natural height
     card.style.transform = '';
+    void card.offsetHeight;
     const naturalH = card.offsetHeight;
-    if (wasHidden) {
-      frame.style.cssText = restore;
-    }
+    if (naturalH < 100) return; // sanity guard
     const padding = 24;
     const scale = Math.min(1, (window.innerWidth - padding) / 540);
     card.style.transform = `scale(${scale})`;
-    frame.style.height = (naturalH * scale + 8) + 'px';
+    card.style.transformOrigin = 'top center';
+    // Add small bottom buffer to avoid clipping any subpixel rounding
+    frame.style.height = Math.ceil(naturalH * scale + 20) + 'px';
   });
 }
-window.addEventListener('load', () => setTimeout(fitCardsToMobile, 100));
+
+// Wait for fonts to fully load before first measurement (fonts affect height!)
+function runFitWhenReady() {
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => {
+      fitCardsToMobile();
+      // Re-run a couple times to catch any late layout shifts
+      setTimeout(fitCardsToMobile, 300);
+      setTimeout(fitCardsToMobile, 800);
+    });
+  } else {
+    setTimeout(fitCardsToMobile, 500);
+    setTimeout(fitCardsToMobile, 1200);
+  }
+}
+
+if (document.readyState === 'complete') {
+  runFitWhenReady();
+} else {
+  window.addEventListener('load', runFitWhenReady);
+}
 window.addEventListener('resize', () => { clearTimeout(window._fitTm); window._fitTm = setTimeout(fitCardsToMobile, 150); });
 
 </script>
