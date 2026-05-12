@@ -367,7 +367,9 @@
 
   /* ============ MOBILE RESPONSIVE ============ */
   @media (max-width: 700px) {
-    body { padding: 12px; }
+    body { padding: 12px; overflow-x: hidden; }
+    .app { overflow-x: hidden; max-width: 100%; }
+    .preview-wrap { overflow-x: hidden; max-width: 100%; }
     .panel { padding: 18px; }
     .brand-top { flex-direction: column; align-items: stretch; gap: 14px; }
     .brand-top > div:first-child { width: 100%; }
@@ -379,7 +381,7 @@
     }
     .top-toggle { width: 100%; display: flex; }
     .top-toggle button { flex: 1; padding: 10px 12px; font-size: 13px; }
-    .user-bar { justify-content: space-between; width: 100%; gap: 8px; }
+    .user-bar { justify-content: flex-start; width: 100%; gap: 10px; flex-wrap: wrap; }
     .user-bar .user-chip { font-size: 11px; padding: 6px 10px; }
     .user-bar .user-chip .meta { display: block; margin-left: 0; margin-top: 2px; font-size: 10px; }
     .user-bar button { font-size: 11px; padding: 6px 10px; }
