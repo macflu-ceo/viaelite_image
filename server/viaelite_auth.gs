@@ -19,6 +19,7 @@
  *  G: 로그인 횟수                (자동)
  *  H: 이미지 제작 횟수            (자동)
  *  I: 마지막 로그인 기기 (mo/pc)  (자동)
+ *  J: AI 사용 횟수                (자동)  ← 신규 (AI모델컷 생성 횟수)
  */
 
 // === 본인 시트 ID로 변경하세요 ===
@@ -36,6 +37,9 @@ function doPost(e) {
     }
     if (data.action === 'card_created') {
       return jsonResponse(handleCardCreated(data.id));
+    }
+    if (data.action === 'ai_used') {
+      return jsonResponse(handleAiUsed(data.id));
     }
     return jsonResponse({ success: false, message: '알 수 없는 요청입니다.' });
   } catch (err) {
@@ -131,6 +135,39 @@ function handleCardCreated(id) {
     if (String(data[i][idCol]).trim() === String(id).trim()) {
       const cur = Number(data[i][imgCountCol]) || 0;
       sheet.getRange(i + 1, imgCountCol + 1).setValue(cur + 1);
+      return { success: true, newCount: cur + 1 };
+    }
+  }
+  return { success: false, message: '사용자를 찾을 수 없습니다.' };
+}
+
+// ============================================================
+// AI 사용(모델컷 생성) 카운트 증가
+// ============================================================
+function handleAiUsed(id) {
+  if (!id) return { success: false, message: 'ID가 필요합니다.' };
+
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  if (!sheet) return { success: false, message: '시트를 찾을 수 없습니다.' };
+
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const idCol = headers.indexOf('ID');
+  let aiCountCol = headers.indexOf('AI 사용 횟수');
+
+  if (idCol === -1) {
+    return { success: false, message: 'ID 컬럼이 없습니다.' };
+  }
+  // "AI 사용 횟수" 헤더가 없으면 마지막 컬럼 다음에 자동 생성
+  if (aiCountCol === -1) {
+    aiCountCol = headers.length;
+    sheet.getRange(1, aiCountCol + 1).setValue('AI 사용 횟수');
+  }
+
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][idCol]).trim() === String(id).trim()) {
+      const cur = Number(data[i][aiCountCol]) || 0;
+      sheet.getRange(i + 1, aiCountCol + 1).setValue(cur + 1);
       return { success: true, newCount: cur + 1 };
     }
   }

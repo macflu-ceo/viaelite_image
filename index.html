@@ -56,6 +56,24 @@
   .btn-ghost { background: #f0ede4; color: #1c3829; }
   .hint { font-size: 11px; color: #999; margin-top: 6px; line-height: 1.5; }
 
+  /* ============ AI MODEL-CUT MODE ============ */
+  .option-group { margin-bottom: 16px; }
+  .option-group > .option-label { display: block; font-size: 12px; color: #555; font-weight: 600; margin-bottom: 8px; letter-spacing: 0.02em; }
+  .option-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .option-pill { padding: 9px 18px; border: 1px solid #d8d3c7; border-radius: 999px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; color: #555; font-family: inherit; transition: all .15s; }
+  .option-pill:hover { border-color: #1c3829; }
+  .option-pill.active { background: #1c3829; border-color: #1c3829; color: #fff; }
+  .ai-gen-status { margin-top: 12px; font-size: 13px; line-height: 1.6; padding: 12px 14px; border-radius: 8px; display: none; }
+  .ai-gen-status.show { display: block; }
+  .ai-gen-status.info { background: #eef1fb; color: #2f3a8f; }
+  .ai-gen-status.error { background: #fbecec; color: #9a2a2a; }
+  .ai-gen-status.loading { background: #f4f1e9; color: #6b5f3a; }
+  .ai-result-box { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .ai-result-img { max-width: 460px; width: 100%; border-radius: 12px; box-shadow: 0 8px 28px rgba(0,0,0,.14); background: #faf9f5; }
+  .ai-placeholder { width: 100%; max-width: 460px; aspect-ratio: 4/5; border: 2px dashed #d8d3c7; border-radius: 12px; display: flex; align-items: center; justify-content: center; text-align: center; color: #aaa; font-size: 13px; padding: 20px; background: #faf9f5; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(107,95,58,.3); border-top-color: #6b5f3a; border-radius: 50%; animation: spin .8s linear infinite; vertical-align: middle; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
   .preview-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
   .preview-label { font-size: 12px; color: #888; letter-spacing: 0.12em; text-transform: uppercase; }
   .canvas-frame { display: flex; justify-content: center; }
@@ -470,6 +488,7 @@
         <div class="top-toggle">
           <button id="top-single" class="active" type="button">단일형</button>
           <button id="top-list" type="button">리스트형</button>
+          <button id="top-aimodel" type="button">AI모델컷 제작</button>
         </div>
         <div class="user-bar">
           <span class="user-chip" id="userChip">사용자<span class="meta" id="userMeta"></span></span>
@@ -552,6 +571,65 @@
       <button class="btn btn-primary" id="downloadA">PNG로 저장</button>
       <button class="btn btn-ghost" id="resetA">초기화</button>
     </div>
+  </div>
+
+  <!-- AI MODEL-CUT INPUT PANEL -->
+  <div id="panel-aimodel" class="panel" style="display:none;">
+    <h2>AI모델컷 제작</h2>
+    <div class="field">
+      <label>상품 이미지 (최대 2장 — 같은 제품 다른 각도)</label>
+      <label class="file-input" id="fileLabelAI">
+        <span id="fileNameAI">클릭해서 업로드 (여러 장 선택 · Ctrl+V 붙여넣기 가능)</span>
+        <input type="file" id="imgAI" accept="image/*" multiple>
+      </label>
+      <div id="aiThumbs" style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;"></div>
+    </div>
+
+    <div class="option-group">
+      <span class="option-label">상품 카테고리</span>
+      <div class="option-pills" id="pillsCategory">
+        <button class="option-pill active" type="button" data-val="clothing">의류</button>
+        <button class="option-pill" type="button" data-val="bag">가방</button>
+        <button class="option-pill" type="button" data-val="shoes">신발</button>
+        <button class="option-pill" type="button" data-val="jewelry">주얼리</button>
+        <button class="option-pill" type="button" data-val="accessory">기타</button>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <span class="option-label">성별</span>
+      <div class="option-pills" id="pillsGender">
+        <button class="option-pill active" type="button" data-val="woman">여성</button>
+        <button class="option-pill" type="button" data-val="man">남성</button>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <span class="option-label">나이대</span>
+      <div class="option-pills" id="pillsAge">
+        <button class="option-pill" type="button" data-val="20s">20대</button>
+        <button class="option-pill active" type="button" data-val="30s">30대</button>
+        <button class="option-pill" type="button" data-val="40s">40대</button>
+        <button class="option-pill" type="button" data-val="50s+">50대 이상</button>
+      </div>
+    </div>
+
+    <div class="option-group">
+      <span class="option-label">컷 종류</span>
+      <div class="option-pills" id="pillsShot">
+        <button class="option-pill active" type="button" data-val="auto">자동</button>
+        <button class="option-pill" type="button" data-val="full">전신</button>
+        <button class="option-pill" type="button" data-val="half">상/하반신</button>
+        <button class="option-pill" type="button" data-val="closeup">클로즈업</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="generateAI">모델컷 생성</button>
+      <button class="btn btn-ghost" id="resetAI">초기화</button>
+    </div>
+    <div class="ai-gen-status" id="aiStatus"></div>
+    <div class="hint">카테고리·성별·나이대·컷 종류를 고르면 AI가 프리미엄 모델컷을 생성합니다. 결과가 별로면 옵션을 바꿔 다시 생성하세요. (생성 1장당 소액 비용 발생)</div>
   </div>
 
   <!-- PREVIEWS -->
@@ -779,6 +857,15 @@
         <div class="list-top"><img class="js-logo" alt="VIA ELITE"></div>
         <div class="list-title-wrap"><div class="lh-title" id="renderListTitle">이번 주 추천 셀렉션</div></div>
         <div class="list-body"><div id="listRows"></div></div>
+      </div>
+    </div>
+
+    <!-- AI MODEL-CUT RESULT -->
+    <div class="canvas-frame" id="previewAI" style="display:none;">
+      <div class="ai-result-box">
+        <div class="ai-placeholder" id="aiPlaceholder">상품 이미지를 올리고 성별·나이대를 고른 뒤<br>「모델컷 생성」을 누르세요</div>
+        <img class="ai-result-img" id="aiResultImg" style="display:none;" alt="생성된 모델컷">
+        <button class="btn btn-primary" id="downloadAI" style="display:none; max-width:200px;">이미지 저장</button>
       </div>
     </div>
   </div>
@@ -1009,10 +1096,13 @@ document.getElementById('downloadA').addEventListener('click', () => {
 // Top-level mode toggle
 const panelSingle = document.getElementById('panel-single');
 const panelList = document.getElementById('panel-list');
+const panelAimodel = document.getElementById('panel-aimodel');
 const previewList = document.getElementById('previewList');
+const previewAI = document.getElementById('previewAI');
 const tplPicker = document.getElementById('tplPicker');
 const topSingle = document.getElementById('top-single');
 const topList = document.getElementById('top-list');
+const topAimodel = document.getElementById('top-aimodel');
 
 function showTemplate(tplNum) {
   document.querySelectorAll('.tpl-frame').forEach(el => {
@@ -1027,20 +1117,205 @@ document.querySelectorAll('#tplPicker button').forEach(b => {
   b.addEventListener('click', () => showTemplate(b.getAttribute('data-tpl')));
 });
 
+function setActiveTopBtn(btn) {
+  [topSingle, topList, topAimodel].forEach(b => b.classList.toggle('active', b === btn));
+}
+function hideAllTplFrames() {
+  document.querySelectorAll('.tpl-frame').forEach(el => { el.style.display = 'none'; });
+}
+
 topSingle.addEventListener('click', () => {
-  panelSingle.style.display = 'block'; panelList.style.display = 'none';
+  panelSingle.style.display = 'block'; panelList.style.display = 'none'; panelAimodel.style.display = 'none';
   tplPicker.style.display = 'flex';
-  previewList.style.display = 'none';
+  previewList.style.display = 'none'; previewAI.style.display = 'none';
   const activeTpl = document.querySelector('#tplPicker button.active');
   showTemplate(activeTpl ? activeTpl.getAttribute('data-tpl') : '1');
-  topSingle.classList.add('active'); topList.classList.remove('active');
+  setActiveTopBtn(topSingle);
 });
 topList.addEventListener('click', () => {
-  panelSingle.style.display = 'none'; panelList.style.display = 'block';
+  panelSingle.style.display = 'none'; panelList.style.display = 'block'; panelAimodel.style.display = 'none';
   tplPicker.style.display = 'none';
-  document.querySelectorAll('.tpl-frame').forEach(el => { el.style.display = 'none'; });
-  previewList.style.display = 'flex';
-  topSingle.classList.remove('active'); topList.classList.add('active');
+  hideAllTplFrames();
+  previewList.style.display = 'flex'; previewAI.style.display = 'none';
+  setActiveTopBtn(topList);
+});
+topAimodel.addEventListener('click', () => {
+  panelSingle.style.display = 'none'; panelList.style.display = 'none'; panelAimodel.style.display = 'block';
+  tplPicker.style.display = 'none';
+  hideAllTplFrames();
+  previewList.style.display = 'none'; previewAI.style.display = 'flex';
+  setActiveTopBtn(topAimodel);
+});
+
+// ============ AI MODEL-CUT MODE ============
+// 백엔드(Vercel 함수)가 키를 들고 Gemini를 호출합니다. 키는 프론트에 절대 두지 않습니다.
+const MODEL_API_ENDPOINT = '/api/generate-model';
+
+const AI_MAX_IMAGES = 2;
+const aiState = { images: [], gender: 'woman', age: '30s', category: 'clothing', shot: 'auto' };
+
+// 큰 이미지는 본문 크기 초과/Internal error를 유발 → 긴 변 1024px로 축소 + JPEG 재인코딩
+function aiDownscale(dataUrl, maxEdge) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxEdge / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(c.toDataURL('image/jpeg', 0.92));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
+// 옵션 pill 단일 선택
+function bindPills(containerId, key) {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  wrap.querySelectorAll('.option-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      wrap.querySelectorAll('.option-pill').forEach(p => p.classList.remove('active'));
+      pill.classList.add('active');
+      aiState[key] = pill.getAttribute('data-val');
+    });
+  });
+}
+bindPills('pillsCategory', 'category');
+bindPills('pillsGender', 'gender');
+bindPills('pillsAge', 'age');
+bindPills('pillsShot', 'shot');
+
+// 이미지 업로드 (최대 2장)
+const imgAIInput = document.getElementById('imgAI');
+const fileLabelAI = document.getElementById('fileLabelAI');
+const fileNameAI = document.getElementById('fileNameAI');
+const aiThumbs = document.getElementById('aiThumbs');
+
+function renderAIThumbs() {
+  aiThumbs.innerHTML = '';
+  aiState.images.forEach((url, idx) => {
+    const box = document.createElement('div');
+    box.style.cssText = 'position:relative; width:72px; height:72px; border-radius:8px; overflow:hidden; border:1px solid #d8d3c7;';
+    const im = document.createElement('img');
+    im.src = url; im.style.cssText = 'width:100%; height:100%; object-fit:cover;';
+    const del = document.createElement('button');
+    del.textContent = '✕'; del.type = 'button';
+    del.style.cssText = 'position:absolute; top:2px; right:2px; width:18px; height:18px; border:0; border-radius:50%; background:rgba(0,0,0,.6); color:#fff; cursor:pointer; font-size:10px; line-height:1;';
+    del.addEventListener('click', () => { aiState.images.splice(idx, 1); syncAIImageUI(); });
+    box.appendChild(im); box.appendChild(del);
+    aiThumbs.appendChild(box);
+  });
+}
+function syncAIImageUI() {
+  renderAIThumbs();
+  const n = aiState.images.length;
+  fileNameAI.textContent = n === 0
+    ? '클릭해서 업로드 (여러 장 선택 · Ctrl+V 붙여넣기 가능)'
+    : (n + '장 업로드됨' + (n < AI_MAX_IMAGES ? ' · 한 장 더 추가 가능' : ' (최대)'));
+  fileLabelAI.classList.toggle('has-image', n > 0);
+}
+function loadAIImage(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  if (aiState.images.length >= AI_MAX_IMAGES) { setAIStatus('error', '이미지는 최대 ' + AI_MAX_IMAGES + '장까지만 넣을 수 있어요.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => { aiState.images.push(e.target.result); syncAIImageUI(); };
+  reader.readAsDataURL(file);
+}
+imgAIInput.addEventListener('change', e => {
+  Array.from(e.target.files).slice(0, AI_MAX_IMAGES).forEach(loadAIImage);
+  e.target.value = '';
+});
+
+// Ctrl+V 붙여넣기 (AI 패널이 보일 때만)
+document.addEventListener('paste', e => {
+  if (panelAimodel.style.display === 'none') return;
+  const items = (e.clipboardData || {}).items || [];
+  for (const it of items) {
+    if (it.type && it.type.startsWith('image/')) { loadAIImage(it.getAsFile()); break; }
+  }
+});
+
+// 상태 메시지
+const aiStatusEl = document.getElementById('aiStatus');
+function setAIStatus(type, html) {
+  if (!type) { aiStatusEl.className = 'ai-gen-status'; aiStatusEl.innerHTML = ''; return; }
+  aiStatusEl.className = 'ai-gen-status show ' + type;
+  aiStatusEl.innerHTML = html;
+}
+
+// 생성
+const generateAIBtn = document.getElementById('generateAI');
+const aiPlaceholder = document.getElementById('aiPlaceholder');
+const aiResultImg = document.getElementById('aiResultImg');
+const downloadAIBtn = document.getElementById('downloadAI');
+
+const AGE_LABEL = { '20s': '20대', '30s': '30대', '40s': '40대', '50s+': '50대 이상' };
+const GENDER_LABEL = { woman: '여성', man: '남성' };
+
+generateAIBtn.addEventListener('click', async () => {
+  if (aiState.images.length === 0) { setAIStatus('error', '먼저 상품 이미지를 업로드하세요.'); return; }
+
+  generateAIBtn.disabled = true;
+  setAIStatus('loading', '<span class="spinner"></span>' +
+    GENDER_LABEL[aiState.gender] + ' · ' + AGE_LABEL[aiState.age] +
+    ' 모델컷 생성 중... (수 초 ~ 수십 초 소요)');
+
+  try {
+    const smallImages = [];
+    for (const url of aiState.images) smallImages.push(await aiDownscale(url, 1024));
+    const res = await fetch(MODEL_API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        images: smallImages,
+        gender: aiState.gender,
+        age: aiState.age,
+        category: aiState.category,
+        shot: aiState.shot
+      })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.image) throw new Error(data.error || '이미지를 받지 못했습니다.');
+
+    aiResultImg.src = data.image;
+    aiResultImg.style.display = 'block';
+    aiPlaceholder.style.display = 'none';
+    downloadAIBtn.style.display = 'block';
+    recordAiUsed(); // AI 사용 횟수 시트에 기록
+    setAIStatus('info', '생성 완료. 마음에 안 들면 옵션을 바꿔 다시 생성하세요.');
+  } catch (err) {
+    setAIStatus('error',
+      '생성에 실패했습니다. (' + err.message + ')<br>' +
+      'AI 생성 서버가 아직 연결되지 않았거나 일시적 오류일 수 있습니다.');
+  } finally {
+    generateAIBtn.disabled = false;
+  }
+});
+
+// 결과 저장
+downloadAIBtn.addEventListener('click', () => {
+  if (!aiResultImg.src) return;
+  const a = document.createElement('a');
+  a.href = aiResultImg.src;
+  a.download = 'viaelite_modelcut_' + aiState.category + '_' + aiState.gender + '_' + aiState.age + '.png';
+  a.click();
+});
+
+// 초기화
+document.getElementById('resetAI').addEventListener('click', () => {
+  aiState.images = [];
+  syncAIImageUI();
+  aiResultImg.style.display = 'none'; aiResultImg.src = '';
+  downloadAIBtn.style.display = 'none';
+  aiPlaceholder.style.display = 'flex';
+  setAIStatus(null);
 });
 
 // Logo
@@ -1109,6 +1384,20 @@ async function recordCardCreated() {
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'card_created', id: user.id }),
+    }).catch(() => {});
+  } catch (e) {}
+}
+
+async function recordAiUsed() {
+  try {
+    const raw = sessionStorage.getItem('viaelite_session');
+    if (!raw) return;
+    const user = JSON.parse(raw);
+    if (!user || !user.id || user.demo || isDemoMode) return;
+    // Fire-and-forget — AI 모델컷 생성 성공 시 호출
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'ai_used', id: user.id }),
     }).catch(() => {});
   } catch (e) {}
 }
