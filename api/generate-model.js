@@ -2,8 +2,14 @@
 // 브라우저에서 받은 상품 이미지 + 옵션으로 프롬프트를 조립하고 Gemini(나노바나나)를 호출한다.
 // API 키는 Vercel 환경변수 GEMINI_API_KEY 에만 보관한다. (코드/프론트에 절대 노출 금지)
 
-const MODEL = 'gemini-2.5-flash-image';
+const MODEL = 'gemini-2.5-flash-image'; // 기본 (안정적). 나노바나나2/Pro는 프리뷰 안정화 후 교체 검토
 const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/' + MODEL + ':generateContent';
+
+// 배경 옵션 → 영문 지시
+const BACKGROUND = {
+  white: "Scene & mood: clean PURE WHITE / soft ivory seamless studio background, bright high-key premium lighting, luxury e-commerce editorial look, soft elegant shadows; the model and product crisply stand out. Keep the background plain and uncluttered.",
+  editorial: "Scene & mood: ultra-premium LUXURY BRAND CAMPAIGN background like a Vogue editorial — refined textured neutral set (warm beige, soft gradient, or elegant minimal interior), sophisticated cinematic lighting, expensive and tasteful mood.",
+};
 
 // ----- 카테고리별 착용 방식 / 기본 구도 / 클로즈업 부위 -----
 const CATEGORY = {
@@ -42,7 +48,7 @@ function buildPrompt(opts) {
 "Generate a photorealistic editorial photograph of a Korean " + gender + " " + agePhrase + " " + cat.wear + ".\n\n" +
 "CRITICAL — Keep the product IDENTICAL to the reference: same shape, color, material, texture, hardware, stitching, pattern and logo. Do not redesign, recolor, or alter the product in any way. Reproduce the exact same product, just shown on the model.\n\n" +
 "Model: a sophisticated, attractive Korean " + gender + " " + agePhrase + " with a luxury-model look, elegant confident expression, refined editorial posture, flawless realistic skin and natural hands. Styling: high-fashion, expensive minimal styling in refined neutral tones that complements (does not compete with) the product.\n\n" +
-"Scene & mood: ultra-premium LUXURY BRAND CAMPAIGN aesthetic, like a Vogue / high-fashion magazine editorial. Professional studio with sophisticated lighting — soft key light plus subtle rim light, elegant soft shadows. Refined upscale background (warm beige, soft gradient, or elegant neutral seamless), cinematic and aspirational mood, expensive and tasteful.\n\n" +
+(BACKGROUND[opts.background] || BACKGROUND.white) + "\n\n" +
 "Framing: " + shotFraming(opts.shot, opts.category, cat) + ", with the product as the clear focal point. Quality: ultra-high-end fashion photography, crisp fine detail, elegant cinematic color grading, sharp focus on the product, shallow depth of field, 85mm lens look, photorealistic, premium and aspirational.\n\n" +
 "Avoid: cheap or amateur look, flat lighting, casual snapshot feel, extra logos or text, watermarks, distorted hands, busy background, holding the item if it should be worn, and any change to the product."
   );
@@ -106,7 +112,7 @@ module.exports = async (req, res) => {
 
   const prompt = buildPrompt({
     gender: body.gender, age: body.age, category: body.category, shot: body.shot,
-    imageCount: parts.length
+    background: body.background, imageCount: parts.length
   });
   parts.push({ text: prompt });
 

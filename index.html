@@ -624,6 +624,14 @@
       </div>
     </div>
 
+    <div class="option-group">
+      <span class="option-label">배경</span>
+      <div class="option-pills" id="pillsBackground">
+        <button class="option-pill active" type="button" data-val="white">화이트(추천)</button>
+        <button class="option-pill" type="button" data-val="editorial">럭셔리 화보</button>
+      </div>
+    </div>
+
     <div class="actions">
       <button class="btn btn-primary" id="generateAI">모델컷 생성</button>
       <button class="btn btn-ghost" id="resetAI">초기화</button>
@@ -1152,7 +1160,7 @@ topAimodel.addEventListener('click', () => {
 const MODEL_API_ENDPOINT = '/api/generate-model';
 
 const AI_MAX_IMAGES = 2;
-const aiState = { images: [], gender: 'woman', age: '30s', category: 'clothing', shot: 'auto' };
+const aiState = { images: [], gender: 'woman', age: '30s', category: 'clothing', shot: 'auto', background: 'white' };
 
 // 큰 이미지는 본문 크기 초과/Internal error를 유발 → 긴 변 1024px로 축소 + JPEG 재인코딩
 function aiDownscale(dataUrl, maxEdge) {
@@ -1190,6 +1198,7 @@ bindPills('pillsCategory', 'category');
 bindPills('pillsGender', 'gender');
 bindPills('pillsAge', 'age');
 bindPills('pillsShot', 'shot');
+bindPills('pillsBackground', 'background');
 
 // 이미지 업로드 (최대 2장)
 const imgAIInput = document.getElementById('imgAI');
@@ -1277,7 +1286,8 @@ generateAIBtn.addEventListener('click', async () => {
         gender: aiState.gender,
         age: aiState.age,
         category: aiState.category,
-        shot: aiState.shot
+        shot: aiState.shot,
+        background: aiState.background
       })
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
